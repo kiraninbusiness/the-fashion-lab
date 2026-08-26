@@ -226,7 +226,44 @@ function Home({ products, ...props }) {
             </span>
           </div>
         </section>
+<section className="style-categories">
+  <div className="section-head">
+    <div>
+      <p className="eyebrow">EXPLORE YOUR STYLE</p>
+      <h2>Shop by style.</h2>
+    </div>
 
+    <Link to="/shop">VIEW ALL</Link>
+  </div>
+
+  <div className="style-category-grid">
+
+    <Link to="/shop" className="style-category">
+      <div className="style-category-image vintage">
+        <span>VINTAGE</span>
+      </div>
+    </Link>
+
+    <Link to="/shop" className="style-category">
+      <div className="style-category-image streetwear">
+        <span>STREETWEAR</span>
+      </div>
+    </Link>
+
+    <Link to="/shop" className="style-category">
+      <div className="style-category-image casual">
+        <span>CASUAL</span>
+      </div>
+    </Link>
+
+    <Link to="/shop" className="style-category">
+      <div className="style-category-image jackets">
+        <span>JACKETS</span>
+      </div>
+    </Link>
+
+  </div>
+</section>
         <section className="section">
           <div className="section-head">
             <div>

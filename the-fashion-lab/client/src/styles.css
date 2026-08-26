@@ -310,3 +310,117 @@
     letter-spacing: 1.5px;
   }
 }
+
+
+/* =========================================
+   PREMIUM BRAND STORY
+   ========================================= */
+
+.brand-story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 650px;
+  margin: 100px 0;
+  background: #111;
+  color: #fff;
+}
+
+.brand-story-image {
+  position: relative;
+  min-height: 600px;
+  background-image:
+    linear-gradient(
+      rgba(0,0,0,0.15),
+      rgba(0,0,0,0.45)
+    ),
+    url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=85");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 35px;
+}
+
+.brand-story-image span {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.brand-story-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px;
+}
+
+.brand-story-content .eyebrow {
+  color: #c19a52;
+  margin-bottom: 25px;
+}
+
+.brand-story-content h2 {
+  margin: 0 0 25px;
+  font-size: clamp(48px, 6vw, 82px);
+  line-height: 0.95;
+  letter-spacing: -2px;
+}
+
+.brand-story-content h2 em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+
+.brand-story-lead {
+  font-size: 22px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+  color: #eee;
+}
+
+.brand-story-content > p:not(.eyebrow):not(.brand-story-lead) {
+  max-width: 520px;
+  color: #aaa;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 10px;
+}
+
+.story-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  margin-top: 25px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #c19a52;
+  color: #fff;
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  transition: gap 0.25s ease;
+}
+
+.story-link:hover {
+  gap: 16px;
+  color: #c19a52;
+}
+
+@media (max-width: 800px) {
+  .brand-story {
+    grid-template-columns: 1fr;
+    margin: 70px 0;
+  }
+
+  .brand-story-image {
+    min-height: 450px;
+  }
+
+  .brand-story-content {
+    padding: 55px 25px;
+  }
+
+  .brand-story-content h2 {
+    font-size: 55px;
+  }
+}

@@ -238,31 +238,47 @@ function Home({ products, ...props }) {
 
   <div className="style-category-grid">
 
-    <Link to="/shop" className="style-category">
-      <div className="style-category-image vintage">
-        <span>VINTAGE</span>
+  <Link to="/shop" className="style-category">
+    <div className="style-category-image vintage">
+      <div className="category-overlay">
+        <span>01</span>
+        <h3>VINTAGE</h3>
+        <small>TIMELESS PIECES</small>
       </div>
-    </Link>
+    </div>
+  </Link>
 
-    <Link to="/shop" className="style-category">
-      <div className="style-category-image streetwear">
-        <span>STREETWEAR</span>
+  <Link to="/shop" className="style-category">
+    <div className="style-category-image streetwear">
+      <div className="category-overlay">
+        <span>02</span>
+        <h3>STREETWEAR</h3>
+        <small>URBAN ESSENTIALS</small>
       </div>
-    </Link>
+    </div>
+  </Link>
 
-    <Link to="/shop" className="style-category">
-      <div className="style-category-image casual">
-        <span>CASUAL</span>
+  <Link to="/shop" className="style-category">
+    <div className="style-category-image casual">
+      <div className="category-overlay">
+        <span>03</span>
+        <h3>CASUAL</h3>
+        <small>EVERYDAY STYLE</small>
       </div>
-    </Link>
+    </div>
+  </Link>
 
-    <Link to="/shop" className="style-category">
-      <div className="style-category-image jackets">
-        <span>JACKETS</span>
+  <Link to="/shop" className="style-category">
+    <div className="style-category-image jackets">
+      <div className="category-overlay">
+        <span>04</span>
+        <h3>JACKETS</h3>
+        <small>OUTER LAYERS</small>
       </div>
-    </Link>
+    </div>
+  </Link>
 
-  </div>
+</div>
 </section>
         <section className="section">
           <div className="section-head">

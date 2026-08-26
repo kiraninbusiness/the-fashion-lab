@@ -17,6 +17,10 @@
   display: block;
 }
 
+/* =========================================
+   PREMIUM PRODUCT CARDS
+   ========================================= */
+
 .product {
   position: relative;
   background: #fff;
@@ -201,5 +205,108 @@
     left: 9px;
     bottom: 9px;
     font-size: 8px;
+  }
+}
+/* =========================================
+   SHOP BY STYLE
+   ========================================= */
+
+.style-categories {
+  padding: 110px 0;
+}
+
+.style-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.style-category {
+  text-decoration: none;
+  color: inherit;
+}
+
+.style-category-image {
+  position: relative;
+  height: 430px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.4s ease;
+}
+
+.style-category:hover .style-category-image {
+  transform: translateY(-5px);
+}
+
+.style-category-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.65),
+    rgba(0,0,0,0.05) 65%
+  );
+}
+
+.style-category-image span {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 2.5px;
+  font-weight: 600;
+}
+
+/* Temporary category images */
+
+.style-category-image.vintage {
+  background-image: url("https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.streetwear {
+  background-image: url("https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.casual {
+  background-image: url("https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.jackets {
+  background-image: url("https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=900&q=85");
+}
+
+@media (max-width: 900px) {
+  .style-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .style-category-image {
+    height: 360px;
+  }
+}
+
+@media (max-width: 600px) {
+  .style-categories {
+    padding: 70px 0;
+  }
+
+  .style-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .style-category-image {
+    height: 260px;
+    padding: 15px;
+  }
+
+  .style-category-image span {
+    font-size: 10px;
+    letter-spacing: 1.5px;
   }
 }

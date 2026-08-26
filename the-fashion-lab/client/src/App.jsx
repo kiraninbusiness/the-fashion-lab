@@ -83,11 +83,7 @@ function Header({
             />
           </label>
 
-          <Link className="icon header-wishlist" to="/shop">
-  <Heart />
-
-  {cart.length > 0 && null}
-</Link>
+          
 <Link
   className="icon header-wishlist"
   to="/wishlist"

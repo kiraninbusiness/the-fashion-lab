@@ -1,11 +1,3 @@
-import React from "react";
-import {Link,useParams} from "react-router-dom";
-import {ArrowLeft,Heart,ShoppingBag} from "lucide-react";
-export default function ProductDetails({products,add,wishlist,toggle}){
- const {id}=useParams(),p=products.find(x=>String(x.id)===id);
- if(!p)return <main className="page"><h1>Piece not found.</h1><Link to="/shop">Back to shop</Link></main>;
- return <main className="page"><Link className="back" to="/shop"><ArrowLeft size={15}/> Back to shop</Link><div className="detail-grid"><div className="detail-image"><img src={p.image} alt={p.name}/></div><div className="detail-copy"><p className="eyebrow">{p.category} · {p.condition}</p><h1>{p.name}</h1><div className="detail-price">₹{Number(p.price).toLocaleString("en-IN")} {p.old_price&&<del>₹{Number(p.old_price).toLocaleString("en-IN")}</del>}</div><p>{p.description||"A carefully selected pre-loved piece, ready for its next story."}</p><div className="specs"><span>Size<b>{p.size}</b></span><span>Gender<b>{p.gender}</b></span><span>Condition<b>{p.condition}</b></span></div><div className="detail-actions"><button className="button dark" onClick={()=>add(p)}><ShoppingBag size={16}/> ADD TO BAG</button><button className="outline" onClick={()=>toggle(p.id)}><Heart fill={wishlist.includes(p.id)?"currentColor":"none"}/> SAVE</button></div></div></div></main>
-}
 import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -27,6 +19,7 @@ export default function ProductDetails({
   toggle
 }) {
   const { id } = useParams();
+
   const product = products.find(
     (p) => String(p.id) === String(id)
   );
@@ -37,15 +30,19 @@ export default function ProductDetails({
     return (
       <main className="product-not-found">
         <p className="eyebrow">THE FASHION LAB</p>
+
         <h1>Piece not found.</h1>
+
         <Link to="/shop">
-          BACK TO SHOP <ArrowRight size={16} />
+          <ArrowLeft size={16} />
+          BACK TO SHOP
         </Link>
       </main>
     );
   }
 
-  const isWishlisted = wishlist.includes(product.id);
+  const isWishlisted =
+    wishlist.includes(product.id);
 
   const addToBag = () => {
     for (let i = 0; i < qty; i++) {
@@ -68,6 +65,7 @@ export default function ProductDetails({
         <div className="product-gallery">
 
           <div className="main-product-image">
+
             <img
               src={product.image}
               alt={product.name}
@@ -76,7 +74,7 @@ export default function ProductDetails({
             <button
               className="product-wishlist"
               onClick={() => toggle(product.id)}
-              aria-label="Wishlist"
+              aria-label="Add to wishlist"
             >
               <Heart
                 fill={
@@ -92,6 +90,7 @@ export default function ProductDetails({
                 ? "SOLD OUT"
                 : product.condition}
             </span>
+
           </div>
 
         </div>
@@ -99,33 +98,43 @@ export default function ProductDetails({
         <div className="product-information">
 
           <p className="product-category">
-            {product.category} · {product.gender}
+            {product.category}
+            {product.gender &&
+              ` · ${product.gender}`}
           </p>
 
           <h1>{product.name}</h1>
 
           <div className="product-price">
-            <strong>{money(product.price)}</strong>
+
+            <strong>
+              {money(product.price)}
+            </strong>
 
             {product.old_price && (
               <del>
                 {money(product.old_price)}
               </del>
             )}
+
           </div>
 
           <div className="product-divider" />
 
           <div className="product-meta">
+
             <div>
               <span>SIZE</span>
-              <strong>{product.size || "ONE SIZE"}</strong>
+              <strong>
+                {product.size || "ONE SIZE"}
+              </strong>
             </div>
 
             <div>
               <span>CONDITION</span>
               <strong>
-                {product.condition || "PRE-LOVED"}
+                {product.condition ||
+                  "PRE-LOVED"}
               </strong>
             </div>
 
@@ -137,6 +146,7 @@ export default function ProductDetails({
                   : "SOLD OUT"}
               </strong>
             </div>
+
           </div>
 
           <p className="product-description">
@@ -148,9 +158,12 @@ export default function ProductDetails({
             <div className="purchase-area">
 
               <div className="quantity">
+
                 <button
                   onClick={() =>
-                    setQty((q) => Math.max(1, q - 1))
+                    setQty((q) =>
+                      Math.max(1, q - 1)
+                    )
                   }
                 >
                   −
@@ -161,12 +174,16 @@ export default function ProductDetails({
                 <button
                   onClick={() =>
                     setQty((q) =>
-                      Math.min(product.stock, q + 1)
+                      Math.min(
+                        product.stock,
+                        q + 1
+                      )
                     )
                   }
                 >
                   +
                 </button>
+
               </div>
 
               <button
@@ -184,24 +201,33 @@ export default function ProductDetails({
 
             <div>
               <Truck size={20} />
+
               <span>
-                <strong>SHIPPED WITH CARE</strong>
+                <strong>
+                  SHIPPED WITH CARE
+                </strong>
                 Pan-India delivery.
               </span>
             </div>
 
             <div>
               <ShieldCheck size={20} />
+
               <span>
-                <strong>QUALITY CHECKED</strong>
+                <strong>
+                  QUALITY CHECKED
+                </strong>
                 Every piece inspected.
               </span>
             </div>
 
             <div>
               <RotateCcw size={20} />
+
               <span>
-                <strong>PRE-LOVED, RE-LOVED</strong>
+                <strong>
+                  PRE-LOVED, RE-LOVED
+                </strong>
                 Giving fashion another life.
               </span>
             </div>
@@ -209,9 +235,11 @@ export default function ProductDetails({
           </div>
 
         </div>
+
       </section>
 
       <section className="product-story">
+
         <p className="eyebrow">
           THE FASHION LAB
         </p>
@@ -223,15 +251,17 @@ export default function ProductDetails({
         </h2>
 
         <p>
-          We believe great clothing deserves more than
-          one life. Each piece in our collection is
-          selected with care and ready for its next chapter.
+          We believe great clothing deserves more
+          than one life. Each piece in our collection
+          is selected with care and ready for its next
+          chapter.
         </p>
 
         <Link to="/shop">
           EXPLORE MORE PIECES
           <ArrowRight size={16} />
         </Link>
+
       </section>
 
     </main>

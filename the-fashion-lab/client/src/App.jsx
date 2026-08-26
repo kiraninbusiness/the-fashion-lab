@@ -480,148 +480,256 @@ function Cart({ cart, setCart, close }) {
   const nav = useNavigate();
 
   const total = cart.reduce(
-    (s, i) => s + i.price * i.qty,
+    (sum, item) => sum + item.price * item.qty,
     0
   );
 
+  const freeShipping = 1499;
+  const remaining = Math.max(
+    freeShipping - total,
+    0
+  );
+
+  const progress = Math.min(
+    (total / freeShipping) * 100,
+    100
+  );
+
   return (
-    <div
-      className="overlay"
-      onClick={close}
-    >
+    <div className="overlay" onClick={close}>
+
       <aside
-        className="cart"
+        className="cart premium-cart"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="cart-head">
-          <h2>Your Bag</h2>
+
+        <div className="cart-head premium-cart-head">
+          <div>
+            <p className="eyebrow">THE FASHION LAB</p>
+            <h2>Your Bag</h2>
+          </div>
 
           <button
             className="icon"
             onClick={close}
+            aria-label="Close bag"
           >
             <X />
           </button>
         </div>
 
         {!cart.length ? (
-          <div className="empty">
-            Your bag is waiting.
-            <br />
+
+          <div className="premium-empty-cart">
+
+            <div className="empty-bag-icon">
+              <ShoppingBag size={32} />
+            </div>
+
+            <p className="eyebrow">
+              YOUR BAG IS EMPTY
+            </p>
+
+            <h3>
+              Nothing here
+              <br />
+              <em>yet.</em>
+            </h3>
+
+            <p>
+              Discover unique pre-loved pieces
+              and give them another story.
+            </p>
 
             <Link
               to="/shop"
+              className="button dark"
               onClick={close}
             >
-              Shop the collection
+              EXPLORE THE COLLECTION
+              <ArrowRight size={16} />
             </Link>
-          </div>
-        ) : (
-          <>
-            <div className="cart-items">
-              {cart.map((i) => (
-                <div
-                  className="cart-item"
-                  key={i.id}
-                >
-                  <img
-                    src={i.image}
-                    alt={i.name}
-                  />
 
-                  <div>
+          </div>
+
+        ) : (
+
+          <>
+
+            <div className="shipping-progress">
+
+              {remaining > 0 ? (
+                <p>
+                  Add{" "}
+                  <strong>
+                    {money(remaining)}
+                  </strong>{" "}
+                  more for FREE shipping.
+                </p>
+              ) : (
+                <p>
+                  <strong>
+                    You've unlocked FREE shipping.
+                  </strong>
+                </p>
+              )}
+
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${progress}%`
+                  }}
+                />
+              </div>
+
+            </div>
+
+            <div className="cart-items premium-cart-items">
+
+              {cart.map((item) => (
+
+                <div
+                  className="cart-item premium-cart-item"
+                  key={item.id}
+                >
+
+                  <Link
+                    to={`/product/${item.id}`}
+                    onClick={close}
+                    className="cart-product-image"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                    />
+                  </Link>
+
+                  <div className="cart-product-info">
+
+                    <small>
+                      {item.category}
+                    </small>
+
                     <strong>
-                      {i.name}
+                      {item.name}
                     </strong>
 
-                    <span>
-                      {money(i.price)}
+                    <span className="cart-price">
+                      {money(item.price)}
                     </span>
 
-                    <div className="qty">
-                      <button
-                        onClick={() =>
-                          setCart((c) =>
-                            c.map((x) =>
-                              x.id === i.id
-                                ? {
-                                    ...x,
-                                    qty: Math.max(
-                                      1,
-                                      x.qty - 1
-                                    )
-                                  }
-                                : x
+                    <div className="cart-product-bottom">
+
+                      <div className="qty">
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCart((c) =>
+                              c.map((x) =>
+                                x.id === item.id
+                                  ? {
+                                      ...x,
+                                      qty: Math.max(
+                                        1,
+                                        x.qty - 1
+                                      )
+                                    }
+                                  : x
+                              )
                             )
-                          )
-                        }
-                      >
-                        -
-                      </button>
+                          }
+                        >
+                          −
+                        </button>
 
-                      {i.qty}
+                        <span>{item.qty}</span>
 
-                      <button
-                        onClick={() =>
-                          setCart((c) =>
-                            c.map((x) =>
-                              x.id === i.id
-                                ? {
-                                    ...x,
-                                    qty: x.qty + 1
-                                  }
-                                : x
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCart((c) =>
+                              c.map((x) =>
+                                x.id === item.id
+                                  ? {
+                                      ...x,
+                                      qty: x.qty + 1
+                                    }
+                                  : x
+                              )
                             )
-                          )
-                        }
-                      >
-                        +
-                      </button>
+                          }
+                        >
+                          +
+                        </button>
+
+                      </div>
 
                       <button
+                        className="remove-item"
+                        type="button"
                         onClick={() =>
                           setCart((c) =>
                             c.filter(
                               (x) =>
-                                x.id !== i.id
+                                x.id !== item.id
                             )
                           )
                         }
                       >
-                        Remove
+                        REMOVE
                       </button>
+
                     </div>
+
                   </div>
+
                 </div>
+
               ))}
+
             </div>
 
-            <div className="cart-bottom">
-              <div>
-                <span>Subtotal</span>
+            <div className="cart-bottom premium-cart-bottom">
+
+              <div className="cart-total-row">
+                <span>SUBTOTAL</span>
                 <strong>
                   {money(total)}
                 </strong>
               </div>
 
-              <small>
+              <p className="cart-note">
                 Shipping calculated at checkout.
-              </small>
+              </p>
 
               <button
-                className="button dark checkout"
+                className="button dark checkout premium-checkout"
                 onClick={() => {
                   close();
                   nav("/checkout");
                 }}
               >
-                CHECKOUT
+                PROCEED TO CHECKOUT
                 <ArrowRight size={17} />
               </button>
+
+              <button
+                className="continue-shopping"
+                onClick={close}
+              >
+                CONTINUE SHOPPING
+              </button>
+
             </div>
+
           </>
+
         )}
+
       </aside>
+
     </div>
   );
 }

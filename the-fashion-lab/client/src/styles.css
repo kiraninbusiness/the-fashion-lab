@@ -424,3 +424,125 @@
     font-size: 55px;
   }
 }
+
+/* =========================================
+   THE FASHION LAB PROMISE
+   ========================================= */
+
+.trust-section {
+  padding: 110px 0;
+  background: #f5f3ee;
+}
+
+.trust-heading {
+  max-width: 650px;
+  margin-bottom: 55px;
+}
+
+.trust-heading .eyebrow {
+  color: #b58a3a;
+}
+
+.trust-heading h2 {
+  margin: 10px 0 15px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 68px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -1.5px;
+}
+
+.trust-heading > p:last-child {
+  max-width: 500px;
+  color: #666;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #d8d4cc;
+  border-bottom: 1px solid #d8d4cc;
+}
+
+.trust-card {
+  position: relative;
+  min-height: 250px;
+  padding: 35px 30px;
+  border-right: 1px solid #d8d4cc;
+  transition: background 0.3s ease;
+}
+
+.trust-card:last-child {
+  border-right: 0;
+}
+
+.trust-card:hover {
+  background: #fff;
+}
+
+.trust-number {
+  margin-bottom: 50px;
+  color: #b58a3a;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.trust-card h3 {
+  margin: 0 0 13px;
+  font-size: 12px;
+  letter-spacing: 1.8px;
+  font-weight: 600;
+}
+
+.trust-card p {
+  max-width: 230px;
+  margin: 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trust-card:nth-child(2) {
+    border-right: 0;
+  }
+
+  .trust-card:nth-child(-n + 2) {
+    border-bottom: 1px solid #d8d4cc;
+  }
+}
+
+@media (max-width: 600px) {
+  .trust-section {
+    padding: 75px 0;
+  }
+
+  .trust-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-card {
+    min-height: auto;
+    padding: 28px 20px;
+    border-right: 0;
+    border-bottom: 1px solid #d8d4cc;
+  }
+
+  .trust-card:last-child {
+    border-bottom: 0;
+  }
+
+  .trust-card:nth-child(2) {
+    border-bottom: 1px solid #d8d4cc;
+  }
+
+  .trust-number {
+    margin-bottom: 25px;
+  }
+}

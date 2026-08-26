@@ -1031,7 +1031,17 @@ export default function App() {
           path="/success"
           element={<Success />}
         />
-
+<Route
+  path="/wishlist"
+  element={
+    <Wishlist
+      products={products}
+      wishlist={wish}
+      toggle={toggle}
+      add={add}
+    />
+  }
+/>
         <Route
           path="/account"
           element={

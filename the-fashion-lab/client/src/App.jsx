@@ -88,7 +88,13 @@ function Header({
 
   {cart.length > 0 && null}
 </Link>
-
+<Link
+  className="icon header-wishlist"
+  to="/wishlist"
+  aria-label="Wishlist"
+>
+  <Heart />
+</Link>
 <Link className="icon" to="/account">
   <User />
 </Link>

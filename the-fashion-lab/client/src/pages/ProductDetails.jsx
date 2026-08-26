@@ -160,14 +160,12 @@ export default function ProductDetails({
               <div className="quantity">
 
                 <button
-                  onClick={() =>
-                    setQty((q) =>
-                      Math.max(1, q - 1)
-                    )
-                  }
-                >
-                  −
-                </button>
+  onClick={() =>
+    setQty((q) => q + 1)
+  }
+>
+  +
+</button>
 
                 <span>{qty}</span>
 

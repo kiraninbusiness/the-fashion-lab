@@ -7,7 +7,38 @@ function Header({cart,user,openMenu,setOpenMenu,setCartOpen}){return <><div clas
   <img src="/Logo.png" alt="The Fashion Lab" />
 </Link><nav className={openMenu?"links open":"links"}><Link onClick={()=>setOpenMenu(false)} to="/">Home</Link><Link onClick={()=>setOpenMenu(false)} to="/shop">Shop</Link><a href="/#story">Our Story</a><a href="/#contact">Contact</a>{user?.role==="admin"&&<Link onClick={()=>setOpenMenu(false)} to="/admin">Admin</Link>}</nav><div className="actions"><label className="search"><Search size={17}/><input placeholder="Search pieces..." onKeyDown={e=>e.key==="Enter"&&(window.location.href="/shop?search="+encodeURIComponent(e.currentTarget.value))}/></label><Link className="icon" to="/account"><User/></Link><button className="icon" onClick={()=>setCartOpen(true)}><ShoppingBag/>{cart.length>0&&<b>{cart.reduce((s,i)=>s+i.qty,0)}</b>}</button></div></header></>}
 function Card({p,add,wish,toggle}){return <article className="product"><Link to={"/product/"+p.id} className="photo"><img src={p.image} alt={p.name}/><button onClick={e=>{e.preventDefault();toggle(p.id)}}><Heart fill={wish.includes(p.id)?"currentColor":"none"}/></button><span>{p.stock<1?"Sold out":p.condition}</span></Link><div className="info"><div><small>{p.category} · {p.size}</small><h3>{p.name}</h3></div><strong>{money(p.price)} {p.old_price&&<del>{money(p.old_price)}</del>}</strong></div><button className="add" onClick={()=>p.stock>0&&add(p)} disabled={p.stock<1}>{p.stock<1?"SOLD OUT":"ADD TO BAG"}</button></article>}
-function Home({products,...props}){return <main><section className="hero"><div className="hero-copy"><p className="eyebrow">CURATED PRE-LOVED FASHION</p><h1>STYLE<br/><em>DESERVES</em><br/>A SECOND LIFE.</h1><p>Unique pieces. Better prices. Less waste. Discover clothes with character and give them another story.</p><Link className="button dark" to="/shop">SHOP THE DROP <ArrowRight size={17}/></Link></div><div className="hero-image"><span>01<br/><small>NEW DROP</small></span></div></section><section className="values"><div><Recycle/><span><strong>FASHION, CIRCULAR</strong>Extending the life of great clothes.</span></div><div><Sparkles/><span><strong>HANDPICKED</strong>Every piece is selected with care.</span></div><div><Truck/><span><strong>SHIPPED WITH CARE</strong>Fast delivery across India.</span></div></section><section className="section"><div className="section-head"><div><p className="eyebrow">THE CURRENT DROP</p><h2>Find your next favourite.</h2></div><Link to="/shop">VIEW ALL</Link></div><div className="grid">{products.slice(0,4).map(p=><Card key={p.id} p={p} {...props}/>)}</div></section><section className="story" id="story"><div></div><article><p className="eyebrow">WHY THRIFT?</p><h2>Good clothes shouldn't become waste.</h2><p>We give quality pre-loved clothing a second chance — and your wardrobe a little more personality.</p><Link to="/shop">EXPLORE THE COLLECTION <ArrowRight size={16}/></Link></article></section><section className="newsletter" id="contact"><p className="eyebrow">STAY IN THE LOOP</p><h2>First dibs on the next drop.</h2><p>New arrivals, private drops and styling inspiration.</p><form onSubmit={e=>e.preventDefault()}><input type="email" placeholder="Your email address" required/><button className="button dark">JOIN US</button></form></section></main>}
+function Home({products,...props}){return <main><section className="premium-hero">
+  <img
+    src="/hero-fashion.jpeg"
+    alt="The Fashion Lab"
+    className="premium-hero-image"
+  />
+
+  <div className="premium-hero-overlay">
+    <p className="hero-eyebrow">CURATED PRE-LOVED FASHION</p>
+
+    <h1>
+      STYLE
+      <br />
+      DESERVES
+      <br />
+      A SECOND LIFE.
+    </h1>
+
+    <p className="hero-description">
+      Unique pieces. Better prices. Less waste.
+      Discover clothes with character and give them another story.
+    </p>
+
+    <button
+      className="premium-hero-button"
+      onClick={() => window.location.href = "/shop"}
+    >
+      SHOP THE COLLECTION
+      <span>→</span>
+    </button>
+  </div>
+</section>
 function Shop({products,...props}){const [cat,setCat]=useState("All"),[q,setQ]=useState("");const list=products.filter(p=>(cat==="All"||p.category===cat)&&(`${p.name} ${p.category} ${p.gender}`).toLowerCase().includes(q.toLowerCase()));return <main className="page"><p className="eyebrow">THE CURRENT DROP</p><h1>Shop the collection.</h1><div className="shop-tools"><div className="filters">{["All","Vintage","Streetwear","Casual"].map(c=><button className={cat===c?"active":""} onClick={()=>setCat(c)} key={c}>{c}</button>)}</div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..."/></div><div className="grid">{list.map(p=><Card key={p.id} p={p} {...props}/>)}</div></main>}
 function Cart({cart,setCart,close}){const nav=useNavigate(),total=cart.reduce((s,i)=>s+i.price*i.qty,0);return <div className="overlay" onClick={close}><aside className="cart" onClick={e=>e.stopPropagation()}><div className="cart-head"><h2>Your Bag</h2><button className="icon" onClick={close}><X/></button></div>{!cart.length?<div className="empty">Your bag is waiting.<br/><Link to="/shop" onClick={close}>Shop the collection</Link></div>:<><div className="cart-items">{cart.map(i=><div className="cart-item" key={i.id}><img src={i.image}/><div><strong>{i.name}</strong><span>{money(i.price)}</span><div className="qty"><button onClick={()=>setCart(c=>c.map(x=>x.id===i.id?{...x,qty:Math.max(1,x.qty-1)}:x))}>-</button>{i.qty}<button onClick={()=>setCart(c=>c.map(x=>x.id===i.id?{...x,qty:x.qty+1}:x))}>+</button><button onClick={()=>setCart(c=>c.filter(x=>x.id!==i.id))}>Remove</button></div></div></div>)}</div><div className="cart-bottom"><div><span>Subtotal</span><strong>{money(total)}</strong></div><small>Shipping calculated at checkout.</small><button className="button dark checkout" onClick={()=>{close();nav("/checkout")}}>CHECKOUT <ArrowRight size={17}/></button></div></>}</aside></div>}
 function Footer(){return <footer><div><Link className="logo light" to="/">THE FASHION<span>LAB</span></Link><p>Pre-loved. Re-loved. Re-styled.</p></div><div className="footer-links"><Link to="/shop">Shop</Link><Link to="/account">Account</Link><a href="/#story">Our Story</a></div><div><Instagram/> @thefashionlab</div></footer>}

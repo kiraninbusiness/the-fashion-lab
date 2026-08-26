@@ -9,7 +9,8 @@ import {
   RotateCcw
 } from "lucide-react";
 
-const money = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
+const money = (n) =>
+  `₹${Number(n).toLocaleString("en-IN")}`;
 
 export default function ProductDetails({
   products,
@@ -28,7 +29,9 @@ export default function ProductDetails({
   if (!product) {
     return (
       <main className="product-not-found">
-        <p className="eyebrow">THE FASHION LAB</p>
+        <p className="eyebrow">
+          THE FASHION LAB
+        </p>
 
         <h1>Piece not found.</h1>
 
@@ -40,7 +43,8 @@ export default function ProductDetails({
     );
   }
 
-  const isWishlisted = wishlist.includes(product.id);
+  const isWishlisted =
+    wishlist.includes(product.id);
 
   const addToBag = () => {
     for (let i = 0; i < qty; i++) {
@@ -49,82 +53,149 @@ export default function ProductDetails({
   };
 
   return (
-    <main className="product-page">
+    <main className="premium-product-page">
 
-      <div className="product-breadcrumb">
+      {/* BREADCRUMB */}
+
+      <div className="premium-breadcrumb">
         <Link to="/shop">
-          <ArrowLeft size={15} />
-          BACK TO SHOP
+          <ArrowLeft size={14} />
+          BACK TO COLLECTION
         </Link>
+
+        <span>
+          {product.category}
+        </span>
       </div>
 
-      <section className="product-detail">
 
-        <div className="product-gallery">
-          <div className="main-product-image">
+      {/* PRODUCT */}
+
+      <section className="premium-product-detail">
+
+        {/* IMAGE */}
+
+        <div className="premium-product-gallery">
+
+          <div className="premium-main-image">
 
             <img
               src={product.image}
               alt={product.name}
             />
 
+            <div className="premium-image-number">
+              {String(product.id).padStart(2, "0")}
+            </div>
+
             <button
               type="button"
-              className="product-wishlist"
-              onClick={() => toggle(product.id)}
+              className="premium-product-wishlist"
+              onClick={() =>
+                toggle(product.id)
+              }
+              aria-label="Add to wishlist"
             >
               <Heart
-                fill={isWishlisted ? "currentColor" : "none"}
+                size={20}
+                strokeWidth={1.5}
+                fill={
+                  isWishlisted
+                    ? "currentColor"
+                    : "none"
+                }
               />
             </button>
 
-            <span className="product-condition">
+            <span className="premium-condition-badge">
               {product.stock < 1
                 ? "SOLD OUT"
                 : product.condition}
             </span>
 
           </div>
+
         </div>
 
-        <div className="product-information">
 
-          <p className="product-category">
+        {/* INFORMATION */}
+
+        <div className="premium-product-information">
+
+          <p className="premium-product-category">
             {product.category}
-            {product.gender ? ` · ${product.gender}` : ""}
+
+            {product.gender
+              ? ` · ${product.gender}`
+              : ""}
           </p>
 
-          <h1>{product.name}</h1>
+          <h1>
+            {product.name}
+          </h1>
 
-          <div className="product-price">
-            <strong>{money(product.price)}</strong>
+          <div className="premium-price">
+
+            <strong>
+              {money(product.price)}
+            </strong>
 
             {product.old_price && (
-              <del>{money(product.old_price)}</del>
+              <del>
+                {money(product.old_price)}
+              </del>
             )}
+
+            {product.old_price && (
+              <span>
+                SAVE{" "}
+                {Math.round(
+                  ((product.old_price -
+                    product.price) /
+                    product.old_price) *
+                    100
+                )}
+                %
+              </span>
+            )}
+
           </div>
 
-          <div className="product-divider" />
+          <div className="premium-divider" />
 
-          <div className="product-meta">
+
+          {/* META */}
+
+          <div className="premium-product-meta">
 
             <div>
               <span>SIZE</span>
+
               <strong>
-                {product.size || "ONE SIZE"}
+                {product.size ||
+                  "ONE SIZE"}
               </strong>
             </div>
 
             <div>
               <span>CONDITION</span>
+
               <strong>
-                {product.condition || "PRE-LOVED"}
+                {product.condition ||
+                  "PRE-LOVED"}
               </strong>
             </div>
 
             <div>
               <span>AVAILABILITY</span>
-              <strong>
+
+              <strong
+                className={
+                  product.stock > 0
+                    ? "in-stock"
+                    : "sold-stock"
+                }
+              >
                 {product.stock > 0
                   ? "IN STOCK"
                   : "SOLD OUT"}
@@ -133,32 +204,58 @@ export default function ProductDetails({
 
           </div>
 
-          <p className="product-description">
-            {product.description ||
-              "A carefully selected pre-loved piece with character, style and a story of its own."}
-          </p>
 
-          {product.stock > 0 && (
-            <div className="purchase-area">
+          {/* DESCRIPTION */}
 
-              <div className="quantity">
+          <div className="premium-description">
+
+            <p className="description-label">
+              ABOUT THIS PIECE
+            </p>
+
+            <p>
+              {product.description ||
+                "A carefully selected pre-loved piece with character, style and a story of its own."}
+            </p>
+
+          </div>
+
+
+          {/* PURCHASE */}
+
+          {product.stock > 0 ? (
+
+            <div className="premium-purchase">
+
+              <div className="premium-quantity">
 
                 <button
                   type="button"
                   onClick={() =>
-                    setQty((q) => Math.max(1, q - 1))
+                    setQty((q) =>
+                      Math.max(1, q - 1)
+                    )
                   }
+                  aria-label="Decrease quantity"
                 >
                   −
                 </button>
 
-                <span>{qty}</span>
+                <span>
+                  {qty}
+                </span>
 
                 <button
                   type="button"
                   onClick={() =>
-                    setQty((q) => q + 1)
+                    setQty((q) =>
+                      Math.min(
+                        product.stock,
+                        q + 1
+                      )
+                    )
                   }
+                  aria-label="Increase quantity"
                 >
                   +
                 </button>
@@ -171,34 +268,59 @@ export default function ProductDetails({
                 onClick={addToBag}
               >
                 ADD TO BAG
-                <ArrowRight size={17} />
+
+                <ArrowRight
+                  size={17}
+                />
               </button>
 
             </div>
+
+          ) : (
+
+            <div className="premium-sold-message">
+              THIS PIECE HAS FOUND A NEW HOME.
+            </div>
+
           )}
 
-          <div className="product-benefits">
+
+          {/* BENEFITS */}
+
+          <div className="premium-benefits">
 
             <div>
-              <Truck size={20} />
+              <Truck size={19} />
+
               <span>
-                <strong>SHIPPED WITH CARE</strong>
+                <strong>
+                  SHIPPED WITH CARE
+                </strong>
+
                 Pan-India delivery.
               </span>
             </div>
 
             <div>
-              <ShieldCheck size={20} />
+              <ShieldCheck size={19} />
+
               <span>
-                <strong>QUALITY CHECKED</strong>
+                <strong>
+                  QUALITY CHECKED
+                </strong>
+
                 Every piece inspected.
               </span>
             </div>
 
             <div>
-              <RotateCcw size={20} />
+              <RotateCcw size={19} />
+
               <span>
-                <strong>PRE-LOVED, RE-LOVED</strong>
+                <strong>
+                  PRE-LOVED, RE-LOVED
+                </strong>
+
                 Giving fashion another life.
               </span>
             </div>
@@ -209,28 +331,48 @@ export default function ProductDetails({
 
       </section>
 
-      <section className="product-story">
 
-        <p className="eyebrow">
-          THE FASHION LAB
-        </p>
+      {/* STORY */}
 
-        <h2>
-          Every piece has
-          <br />
-          <em>another story.</em>
-        </h2>
+      <section className="premium-product-story">
 
-        <p>
-          We believe great clothing deserves more than
-          one life. Each piece in our collection is
-          selected with care and ready for its next chapter.
-        </p>
+        <div className="story-number">
+          01
+        </div>
 
-        <Link to="/shop">
-          EXPLORE MORE PIECES
-          <ArrowRight size={16} />
-        </Link>
+        <div>
+
+          <p className="eyebrow">
+            THE FASHION LAB
+          </p>
+
+          <h2>
+            Every piece has
+            <br />
+            <em>another story.</em>
+          </h2>
+
+        </div>
+
+        <div className="story-text">
+
+          <p>
+            We believe great clothing deserves
+            more than one life.
+          </p>
+
+          <p>
+            Each piece in our collection is
+            selected with care and ready for
+            its next chapter.
+          </p>
+
+          <Link to="/shop">
+            EXPLORE MORE PIECES
+            <ArrowRight size={16} />
+          </Link>
+
+        </div>
 
       </section>
 

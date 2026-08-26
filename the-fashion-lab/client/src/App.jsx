@@ -412,7 +412,10 @@ function Home({ products, ...props }) {
     </small>
   </div>
 </section>
-
+</section>
+</main>
+);
+}
 function Shop({ products, ...props }) {
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");

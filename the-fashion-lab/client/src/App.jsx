@@ -381,7 +381,10 @@ function Home({ products, ...props }) {
 
         <section className="premium-newsletter" id="contact">
   <div className="newsletter-inner">
-    <p className="eyebrow">THE FASHION LAB JOURNAL</p>
+
+    <p className="eyebrow">
+      THE FASHION LAB JOURNAL
+    </p>
 
     <h2>
       Stay in the
@@ -394,22 +397,43 @@ function Home({ products, ...props }) {
       styling inspiration and stories from The Fashion Lab.
     </p>
 
-    <form onSubmit={(e) => e.preventDefault()}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+
+        const email = e.target.email.value;
+
+        if (!email) return;
+
+        alert(
+          `Thank you! ${email} has been added to The Fashion Lab Journal.`
+        );
+
+        e.target.reset();
+      }}
+    >
+
       <input
+        name="email"
         type="email"
         placeholder="Enter your email address"
         required
       />
 
-      <button className="newsletter-button">
+      <button
+        type="submit"
+        className="newsletter-button"
+      >
         JOIN THE LAB
         <ArrowRight size={16} />
       </button>
+
     </form>
 
     <small>
       No spam. Just good fashion.
     </small>
+
   </div>
 </section>
 </section>

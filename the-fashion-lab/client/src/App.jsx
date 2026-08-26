@@ -379,37 +379,39 @@ function Home({ products, ...props }) {
   </div>
 </section>
 
-        <section className="newsletter" id="contact">
-          <p className="eyebrow">
-            STAY IN THE LOOP
-          </p>
+        <section className="premium-newsletter" id="contact">
+  <div className="newsletter-inner">
+    <p className="eyebrow">THE FASHION LAB JOURNAL</p>
 
-          <h2>
-            First dibs on the next drop.
-          </h2>
+    <h2>
+      Stay in the
+      <br />
+      <em>loop.</em>
+    </h2>
 
-          <p>
-            New arrivals, private drops and styling
-            inspiration.
-          </p>
+    <p className="newsletter-text">
+      Get first access to new drops, exclusive pieces,
+      styling inspiration and stories from The Fashion Lab.
+    </p>
 
-          <form onSubmit={(e) => e.preventDefault()}>
-            <input
-              type="email"
-              placeholder="Your email address"
-              required
-            />
+    <form onSubmit={(e) => e.preventDefault()}>
+      <input
+        type="email"
+        placeholder="Enter your email address"
+        required
+      />
 
-            <button className="button dark">
-              JOIN US
-            </button>
-          </form>
-        </section>
+      <button className="newsletter-button">
+        JOIN THE LAB
+        <ArrowRight size={16} />
+      </button>
+    </form>
 
-      </section>
-    </main>
-  );
-}
+    <small>
+      No spam. Just good fashion.
+    </small>
+  </div>
+</section>
 
 function Shop({ products, ...props }) {
   const [cat, setCat] = useState("All");
@@ -623,38 +625,67 @@ function Cart({ cart, setCart, close }) {
 
 function Footer() {
   return (
-    <footer>
-      <div>
-        <Link
-          className="logo light"
-          to="/"
-        >
-          THE FASHION
-          <span>LAB</span>
-        </Link>
+    <footer className="premium-footer">
+      <div className="footer-main">
 
-        <p>
-          Pre-loved. Re-loved. Re-styled.
-        </p>
+        <div className="footer-brand">
+          <Link className="footer-logo" to="/">
+            THE FASHION
+            <span>LAB</span>
+          </Link>
+
+          <p>
+            Pre-loved. Re-loved. Re-styled.
+          </p>
+
+          <a
+            href="https://instagram.com/thefashionlab"
+            target="_blank"
+            rel="noreferrer"
+            className="instagram-link"
+          >
+            <Instagram size={18} />
+            @thefashionlab
+          </a>
+        </div>
+
+        <div className="footer-column">
+          <h4>SHOP</h4>
+
+          <Link to="/shop">New Arrivals</Link>
+          <Link to="/shop">Vintage</Link>
+          <Link to="/shop">Streetwear</Link>
+          <Link to="/shop">Casual</Link>
+        </div>
+
+        <div className="footer-column">
+          <h4>ABOUT</h4>
+
+          <a href="/#story">Our Story</a>
+          <a href="/#story">Our Philosophy</a>
+          <Link to="/shop">The Collection</Link>
+          <a href="/#contact">Contact</a>
+        </div>
+
+        <div className="footer-column">
+          <h4>HELP</h4>
+
+          <a href="/#contact">Shipping</a>
+          <a href="/#contact">Returns</a>
+          <a href="/#contact">FAQ</a>
+          <Link to="/account">My Account</Link>
+        </div>
+
       </div>
 
-      <div className="footer-links">
-        <Link to="/shop">
-          Shop
-        </Link>
+      <div className="footer-bottom">
+        <span>
+          © 2026 The Fashion Lab. All rights reserved.
+        </span>
 
-        <Link to="/account">
-          Account
-        </Link>
-
-        <a href="/#story">
-          Our Story
-        </a>
-      </div>
-
-      <div>
-        <Instagram />
-        @thefashionlab
+        <span>
+          PRE-LOVED · RE-LOVED · RE-STYLED
+        </span>
       </div>
     </footer>
   );

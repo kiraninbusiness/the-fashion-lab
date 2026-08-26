@@ -2575,3 +2575,125 @@
     font-size: 55px;
   }
 }
+/* =========================================
+   PREMIUM NEWSLETTER
+   ========================================= */
+
+.premium-newsletter {
+  margin-top: 80px;
+  padding: 100px 30px;
+  background: #111;
+  color: #fff;
+  text-align: center;
+}
+
+.newsletter-inner {
+  max-width: 700px;
+  margin: auto;
+}
+
+.premium-newsletter .eyebrow {
+  margin-bottom: 20px;
+  color: #b58a3a;
+}
+
+.premium-newsletter h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(55px, 8vw, 90px);
+  font-weight: 400;
+  line-height: .9;
+  letter-spacing: -3px;
+}
+
+.premium-newsletter h2 em {
+  color: #b58a3a;
+  font-weight: 400;
+}
+
+.newsletter-text {
+  max-width: 500px;
+  margin: 30px auto;
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.premium-newsletter form {
+  max-width: 550px;
+  margin: 35px auto 15px;
+  display: flex;
+  border-bottom: 1px solid #555;
+}
+
+.premium-newsletter input {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 5px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.premium-newsletter input::placeholder {
+  color: #777;
+}
+
+.newsletter-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 5px 0 20px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.newsletter-button:hover {
+  color: #b58a3a;
+}
+
+.premium-newsletter small {
+  color: #666;
+  font-size: 8px;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 600px) {
+
+  .premium-newsletter {
+    padding: 75px 20px;
+  }
+
+  .premium-newsletter h2 {
+    font-size: 58px;
+  }
+
+  .premium-newsletter form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-bottom: 0;
+  }
+
+  .premium-newsletter input {
+    border-bottom: 1px solid #555;
+    padding: 15px 5px;
+  }
+
+  .newsletter-button {
+    min-height: 45px;
+    padding: 0;
+    justify-content: center;
+    background: #fff;
+    color: #111;
+  }
+
+}

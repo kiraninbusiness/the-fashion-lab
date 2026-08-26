@@ -16,7 +16,6 @@
   object-fit: contain;
   display: block;
 }
-
 /* =========================================
    PREMIUM PRODUCT CARDS
    ========================================= */
@@ -261,7 +260,6 @@
   letter-spacing: 2.5px;
   font-weight: 600;
 }
-
 /* Temporary category images */
 
 .style-category-image.vintage {
@@ -310,8 +308,6 @@
     letter-spacing: 1.5px;
   }
 }
-
-
 /* =========================================
    PREMIUM BRAND STORY
    ========================================= */
@@ -424,7 +420,6 @@
     font-size: 55px;
   }
 }
-
 /* =========================================
    THE FASHION LAB PROMISE
    ========================================= */
@@ -544,5 +539,239 @@
 
   .trust-number {
     margin-bottom: 25px;
+  }
+}
+/* =========================================
+   PREMIUM NEWSLETTER
+   ========================================= */
+
+.premium-newsletter {
+  position: relative;
+  padding: 120px 25px;
+  background: #111;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.premium-newsletter::before {
+  content: "LAB";
+  position: absolute;
+  right: -40px;
+  bottom: -100px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 300px;
+  line-height: 1;
+  color: rgba(255,255,255,0.025);
+  pointer-events: none;
+}
+
+.newsletter-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: auto;
+}
+
+.newsletter-inner .eyebrow {
+  color: #c19a52;
+  margin-bottom: 25px;
+}
+
+.newsletter-inner h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(55px, 7vw, 90px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -2px;
+}
+
+.newsletter-inner h2 em {
+  font-weight: 400;
+}
+
+.newsletter-text {
+  max-width: 500px;
+  margin: 28px auto 35px;
+  color: #aaa;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.premium-newsletter form {
+  display: flex;
+  max-width: 570px;
+  margin: 0 auto;
+  border-bottom: 1px solid #555;
+}
+
+.premium-newsletter input {
+  flex: 1;
+  min-width: 0;
+  padding: 17px 5px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+}
+
+.premium-newsletter input::placeholder {
+  color: #777;
+}
+
+.newsletter-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 5px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.newsletter-button:hover {
+  color: #c19a52;
+}
+
+.newsletter-inner small {
+  display: block;
+  margin-top: 18px;
+  color: #666;
+  font-size: 11px;
+}
+/* =========================================
+   PREMIUM FOOTER
+   ========================================= */
+
+.premium-footer {
+  padding: 70px 5% 25px;
+  background: #080808;
+  color: #fff;
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 60px;
+  padding-bottom: 65px;
+}
+
+.footer-logo {
+  display: inline-flex;
+  flex-direction: column;
+  color: #fff;
+  text-decoration: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  line-height: 0.9;
+  letter-spacing: 2px;
+}
+
+.footer-logo span {
+  font-size: 13px;
+  letter-spacing: 6px;
+  margin-top: 6px;
+}
+
+.footer-brand > p {
+  margin: 22px 0;
+  color: #777;
+  font-size: 13px;
+}
+
+.instagram-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #aaa;
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.25s ease;
+}
+
+.instagram-link:hover {
+  color: #c19a52;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.footer-column h4 {
+  margin: 0 0 10px;
+  color: #c19a52;
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.footer-column a {
+  width: fit-content;
+  color: #888;
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.25s ease;
+}
+
+.footer-column a:hover {
+  color: #fff;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 22px;
+  border-top: 1px solid #242424;
+  color: #555;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+/* =========================================
+   MOBILE FOOTER
+   ========================================= */
+
+@media (max-width: 700px) {
+
+  .premium-newsletter {
+    padding: 85px 20px;
+  }
+
+  .premium-newsletter form {
+    display: block;
+    border-bottom: 0;
+  }
+
+  .premium-newsletter input {
+    width: 100%;
+    border-bottom: 1px solid #555;
+  }
+
+  .newsletter-button {
+    margin: 15px auto 0;
+  }
+
+  .footer-main {
+    grid-template-columns: 1fr 1fr;
+    gap: 45px 25px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 10px;
   }
 }

@@ -294,30 +294,41 @@ function Home({ products, ...props }) {
           </div>
         </section>
 
-        <section className="story" id="story">
-          <div></div>
+        <section className="brand-story" id="story">
+  <div className="brand-story-image">
+    <span>THE FASHION LAB</span>
+  </div>
 
-          <article>
-            <p className="eyebrow">
-              WHY THRIFT?
-            </p>
+  <div className="brand-story-content">
+    <p className="eyebrow">OUR PHILOSOPHY</p>
 
-            <h2>
-              Good clothes shouldn't become waste.
-            </h2>
+    <h2>
+      WEAR THE
+      <br />
+      <em>STORY.</em>
+    </h2>
 
-            <p>
-              We give quality pre-loved clothing a
-              second chance — and your wardrobe a little
-              more personality.
-            </p>
+    <p className="brand-story-lead">
+      Great fashion deserves more than one life.
+    </p>
 
-            <Link to="/shop">
-              EXPLORE THE COLLECTION
-              <ArrowRight size={16} />
-            </Link>
-          </article>
-        </section>
+    <p>
+      The Fashion Lab is a curated destination for pre-loved pieces
+      with character, quality and a story worth continuing.
+    </p>
+
+    <p>
+      We believe personal style shouldn't come at the cost of
+      unnecessary waste. Every piece gets a second chance — and
+      your wardrobe gets something truly different.
+    </p>
+
+    <Link to="/shop" className="story-link">
+      DISCOVER THE COLLECTION
+      <ArrowRight size={17} />
+    </Link>
+  </div>
+</section>
 
         <section className="newsletter" id="contact">
           <p className="eyebrow">

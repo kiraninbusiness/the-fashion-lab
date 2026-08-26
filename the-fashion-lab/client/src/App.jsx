@@ -293,7 +293,56 @@ function Home({ products, ...props }) {
               ))}
           </div>
         </section>
+<section className="trust-section">
+  <div className="trust-heading">
+    <p className="eyebrow">THE FASHION LAB PROMISE</p>
+    <h2>Why shop with us?</h2>
+    <p>
+      Thoughtfully selected pieces, carefully checked and
+      delivered with care.
+    </p>
+  </div>
 
+  <div className="trust-grid">
+
+    <div className="trust-card">
+      <div className="trust-number">01</div>
+      <h3>HANDPICKED</h3>
+      <p>
+        Every piece is carefully selected for its style,
+        quality and individuality.
+      </p>
+    </div>
+
+    <div className="trust-card">
+      <div className="trust-number">02</div>
+      <h3>QUALITY CHECKED</h3>
+      <p>
+        We inspect every item before it becomes part of
+        The Fashion Lab collection.
+      </p>
+    </div>
+
+    <div className="trust-card">
+      <div className="trust-number">03</div>
+      <h3>SECURE CHECKOUT</h3>
+      <p>
+        A simple and secure shopping experience from
+        selection to payment.
+      </p>
+    </div>
+
+    <div className="trust-card">
+      <div className="trust-number">04</div>
+      <h3>DELIVERED WITH CARE</h3>
+      <p>
+        Carefully packed and shipped across India,
+        straight to your door.
+      </p>
+    </div>
+
+  </div>
+</section>
         <section className="brand-story" id="story">
   <div className="brand-story-image">
     <span>THE FASHION LAB</span>

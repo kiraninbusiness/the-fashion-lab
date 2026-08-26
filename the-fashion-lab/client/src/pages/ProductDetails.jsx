@@ -246,19 +246,14 @@ export default function ProductDetails({
                 </span>
 
                 <button
-                  type="button"
-                  onClick={() =>
-                    setQty((q) =>
-                      Math.min(
-                        product.stock,
-                        q + 1
-                      )
-                    )
-                  }
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
+  type="button"
+  onClick={() =>
+    setQty((q) => q + 1)
+  }
+  aria-label="Increase quantity"
+>
+  +
+</button>
 
               </div>
 

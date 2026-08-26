@@ -158,20 +158,24 @@ export default function ProductDetails({
             <div className="purchase-area">
 
               <div className="quantity">
+  <button
+    onClick={() =>
+      setQty((q) => Math.max(1, q - 1))
+    }
+  >
+    −
+  </button>
 
-                <button
-  onClick={() =>
-    setQty((q) => q + 1)
-  }
->
-  +
-</button>
+  <span>{qty}</span>
 
-                <span>{qty}</span>
-
-                <button
-                  onClick={() =>
-                    setQty((q) =>
+  <button
+    onClick={() =>
+      setQty((q) => q + 1)
+    }
+  >
+    +
+  </button>
+</div>
                       Math.min(
                         product.stock,
                         q + 1

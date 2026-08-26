@@ -106,17 +106,35 @@ function Header({
 
 function Card({ p, add, wish, toggle }) {
   return (
-    <article className="product">
-      <Link to={"/product/" + p.id} className="photo">
-        <img src={p.image} alt={p.name} />
+    <article className="product premium-product">
+
+      <Link
+        to={"/product/" + p.id}
+        className="photo premium-product-photo"
+      >
+
+        <img
+          src={p.image}
+          alt={p.name}
+          loading="lazy"
+        />
+
+        <div className="product-number">
+          {String(p.id).padStart(2, "0")}
+        </div>
 
         <button
+          className="product-heart"
+          aria-label="Add to wishlist"
           onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             toggle(p.id);
           }}
         >
           <Heart
+            size={18}
+            strokeWidth={1.5}
             fill={
               wish.includes(p.id)
                 ? "currentColor"
@@ -125,39 +143,57 @@ function Card({ p, add, wish, toggle }) {
           />
         </button>
 
-        <span>
-          {p.stock < 1 ? "Sold out" : p.condition}
+        <span className="product-condition">
+          {p.stock < 1
+            ? "SOLD OUT"
+            : p.condition}
         </span>
+
       </Link>
 
-      <div className="info">
+      <div className="info premium-product-info">
+
         <div>
+
           <small>
             {p.category} · {p.size}
           </small>
 
-          <h3>{p.name}</h3>
+          <h3>
+            {p.name}
+          </h3>
+
         </div>
 
         <strong>
-          {money(p.price)}{" "}
+          {money(p.price)}
+
           {p.old_price && (
-            <del>{money(p.old_price)}</del>
+            <del>
+              {money(p.old_price)}
+            </del>
           )}
         </strong>
+
       </div>
 
       <button
-        className="add"
+        className="add premium-add"
         onClick={() => p.stock > 0 && add(p)}
         disabled={p.stock < 1}
       >
-        {p.stock < 1 ? "SOLD OUT" : "ADD TO BAG"}
+        {p.stock < 1
+          ? "SOLD OUT"
+          : "ADD TO BAG"}
+
+        {p.stock > 0 && (
+          <ArrowRight size={15} />
+        )}
       </button>
+
     </article>
   );
 }
-
 function Home({ products, ...props }) {
   return (
     <main>

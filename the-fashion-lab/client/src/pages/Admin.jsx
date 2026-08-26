@@ -8,4 +8,37 @@ export default function Admin({user}){const [products,setProducts]=useState([]),
  async function remove(id){if(!confirm("Delete this product?"))return;try{await api(`/products/${id}`,{method:"DELETE"});load()}catch(e){setErr(e.message)}}
  function edit(p){setEditing(p.id);setF({...p,old_price:p.old_price||""});window.scrollTo({top:0,behavior:"smooth"})}
  async function status(id,status){try{await api(`/orders/${id}/status`,{method:"PATCH",body:JSON.stringify({status})});load()}catch(e){setErr(e.message)}}
- return <main className="page"><p className="eyebrow">STORE CONTROL</p><h1>Admin dashboard.</h1>{err&&<p className="error">{err}</p>}<div className="admin-grid"><form className="form-card" onSubmit={save}><div className="admin-form-head"><h2>{editing?"Edit product":"Add product"}</h2>{editing&&<button type="button" className="switch" onClick={()=>{setEditing(null);setF(empty)}}>Cancel edit</button>}</div>{[["name","Product name"],["price","Price"],["old_price","Original price"],["image","Image URL"],["size","Size"],["stock","Stock"]].map(([k,p])=><input key={k} required={k!=="old_price"} type={k.includes("price")||k==="stock"?"number":"text"} placeholder={p} value={f[k]} onChange={e=>change(k,e.target.value)}/>)}<textarea placeholder="Description" value={f.description} onChange={e=>change("description",e.target.value)}/><select value={f.category} onChange={e=>change("category",e.target.value)}><option>Vintage</option><option>Streetwear</option><option>Casual</option></select><select value={f.gender} onChange={e=>change("gender",e.target.value)}><option>Unisex</option><option>Men</option><option>Women</option></select><select value={f.condition} onChange={e=>change("condition",e.target.value)}><option>Excellent</option><option>Very Good</option><option>Good</option></select><button disabled={busy} className="button dark">{busy?"SAVING...":editing?"SAVE CHANGES":"ADD PRODUCT"}</button></form><section><div className="admin-section-head"><h2>Products ({products.length})</h2></div>{products.map(p=><div className="admin-row expanded" key={p.id}><div><b>{p.name}</b><span>₹{p.price} · stock {p.stock} · {p.category}</span></div><div className="row-actions"><button onClick={()=>edit(p)}>Edit</button><button onClick={()=>remove(p.id)}>Delete</button></div></div>)}<h2 className="orders-title">Orders ({orders.length})</h2>{orders.map(o=><div className="admin-row expanded" key={o.id}><div><b>#{o.id} · {o.name}</b><span>{o.email} · ₹{o.total} · {new Date(o.created_at).toLocaleDateString("en-IN")}</span></div><select value={o.status} onChange={e=>status(o.id,e.target.value)}><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>)}</section></div></main>}
+ return <main className="page"><p className="eyebrow">STORE CONTROL</p><h1>Admin dashboard.</h1><div className="admin-stats">
+
+  <div className="admin-stat">
+    <span>PRODUCTS</span>
+    <strong>{products.length}</strong>
+    <small>Listed in store</small>
+  </div>
+
+  <div className="admin-stat">
+    <span>ORDERS</span>
+    <strong>{orders.length}</strong>
+    <small>Total orders</small>
+  </div>
+
+  <div className="admin-stat">
+    <span>PENDING</span>
+    <strong>
+      {orders.filter(o => o.status === "pending").length}
+    </strong>
+    <small>Need attention</small>
+  </div>
+
+  <div className="admin-stat">
+    <span>REVENUE</span>
+    <strong>
+      ₹{orders
+        .filter(o => o.status !== "cancelled")
+        .reduce((sum, o) => sum + Number(o.total || 0), 0)
+        .toLocaleString("en-IN")}
+    </strong>
+    <small>Order value</small>
+  </div>
+
+</div>{err&&<p className="error">{err}</p>}<div className="admin-grid"><form className="form-card" onSubmit={save}><div className="admin-form-head"><h2>{editing?"Edit product":"Add product"}</h2>{editing&&<button type="button" className="switch" onClick={()=>{setEditing(null);setF(empty)}}>Cancel edit</button>}</div>{[["name","Product name"],["price","Price"],["old_price","Original price"],["image","Image URL"],["size","Size"],["stock","Stock"]].map(([k,p])=><input key={k} required={k!=="old_price"} type={k.includes("price")||k==="stock"?"number":"text"} placeholder={p} value={f[k]} onChange={e=>change(k,e.target.value)}/>)}<textarea placeholder="Description" value={f.description} onChange={e=>change("description",e.target.value)}/><select value={f.category} onChange={e=>change("category",e.target.value)}><option>Vintage</option><option>Streetwear</option><option>Casual</option></select><select value={f.gender} onChange={e=>change("gender",e.target.value)}><option>Unisex</option><option>Men</option><option>Women</option></select><select value={f.condition} onChange={e=>change("condition",e.target.value)}><option>Excellent</option><option>Very Good</option><option>Good</option></select><button disabled={busy} className="button dark">{busy?"SAVING...":editing?"SAVE CHANGES":"ADD PRODUCT"}</button></form><section><div className="admin-section-head"><h2>Products ({products.length})</h2></div>{products.map(p=><div className="admin-row expanded" key={p.id}><div><b>{p.name}</b><span>₹{p.price} · stock {p.stock} · {p.category}</span></div><div className="row-actions"><button onClick={()=>edit(p)}>Edit</button><button onClick={()=>remove(p.id)}>Delete</button></div></div>)}<h2 className="orders-title">Orders ({orders.length})</h2>{orders.map(o=><div className="admin-row expanded" key={o.id}><div><b>#{o.id} · {o.name}</b><span>{o.email} · ₹{o.total} · {new Date(o.created_at).toLocaleDateString("en-IN")}</span></div><select value={o.status} onChange={e=>status(o.id,e.target.value)}><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>)}</section></div></main>}

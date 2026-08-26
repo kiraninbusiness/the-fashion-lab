@@ -20,6 +20,7 @@ import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import Wishlist from "./pages/Wishlist";
 
 const money = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
 

@@ -1121,3 +1121,42 @@
     min-height: 54px;
   }
 }
+/* PRODUCT QUANTITY FIX */
+
+.quantity {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: hidden;
+}
+
+.quantity button {
+  width: 45px !important;
+  height: 52px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: #fff !important;
+  color: #111 !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+}
+
+.quantity button:hover {
+  background: #f5f5f5 !important;
+}
+
+.quantity span {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 52px;
+  color: #111;
+  font-size: 14px;
+  font-weight: 500;
+}

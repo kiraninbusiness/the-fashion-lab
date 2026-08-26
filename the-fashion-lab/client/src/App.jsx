@@ -82,14 +82,20 @@ function Header({
             />
           </label>
 
-          <Link className="icon" to="/account">
-            <User />
-          </Link>
+          <Link className="icon header-wishlist" to="/shop">
+  <Heart />
 
-          <button
-            className="icon"
-            onClick={() => setCartOpen(true)}
-          >
+  {cart.length > 0 && null}
+</Link>
+
+<Link className="icon" to="/account">
+  <User />
+</Link>
+
+<button
+  className="icon header-bag"
+  onClick={() => setCartOpen(true)}
+>
             <ShoppingBag />
 
             {cart.length > 0 && (

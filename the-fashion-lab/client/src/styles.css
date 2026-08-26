@@ -2697,3 +2697,137 @@
   }
 
 }
+/* =========================================
+   PREMIUM STYLE CATEGORIES
+   ========================================= */
+
+.style-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.style-category {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.style-category-image {
+  position: relative;
+  height: 430px;
+  overflow: hidden;
+  background-color: #e9e7e2;
+  background-size: cover;
+  background-position: center;
+}
+
+.style-category-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,.65),
+    rgba(0,0,0,.05) 60%
+  );
+  transition: opacity .35s ease;
+}
+
+.style-category:hover .style-category-image::after {
+  opacity: .8;
+}
+
+/* Editorial fashion image backgrounds */
+
+.style-category-image.vintage {
+  background-image:
+    url("https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.streetwear {
+  background-image:
+    url("https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.casual {
+  background-image:
+    url("https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=85");
+}
+
+.style-category-image.jackets {
+  background-image:
+    url("https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=85");
+}
+
+.category-overlay {
+  position: absolute;
+  z-index: 2;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  color: #fff;
+}
+
+.category-overlay span {
+  display: block;
+  margin-bottom: 12px;
+  color: #ddd;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+}
+
+.category-overlay h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -.5px;
+}
+
+.category-overlay small {
+  display: block;
+  margin-top: 7px;
+  color: #ddd;
+  font-size: 7px;
+  letter-spacing: 1.3px;
+}
+
+.style-category-image {
+  transition: transform .5s ease;
+}
+
+.style-category:hover .style-category-image {
+  transform: scale(1.025);
+}
+
+@media (max-width: 900px) {
+  .style-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .style-category-image {
+    height: 380px;
+  }
+}
+
+@media (max-width: 550px) {
+  .style-category-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .style-category-image {
+    height: 280px;
+  }
+
+  .category-overlay {
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+  }
+
+  .category-overlay h3 {
+    font-size: 21px;
+  }
+}

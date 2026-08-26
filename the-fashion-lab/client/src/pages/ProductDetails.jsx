@@ -159,6 +159,7 @@ export default function ProductDetails({
 
               <div className="quantity">
   <button
+    type="button"
     onClick={() =>
       setQty((q) => Math.max(1, q - 1))
     }
@@ -169,6 +170,7 @@ export default function ProductDetails({
   <span>{qty}</span>
 
   <button
+    type="button"
     onClick={() =>
       setQty((q) => q + 1)
     }

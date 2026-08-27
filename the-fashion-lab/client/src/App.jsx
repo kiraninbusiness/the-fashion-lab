@@ -91,12 +91,20 @@ function Header({
 >
   <Heart />
 </Link>
+<Link className="icon header-wishlist" to="/wishlist">
+  <Heart />
+
+  {wishCount > 0 && (
+    <b>{wishCount}</b>
+  )}
+</Link>
+
 <Link className="icon" to="/account">
   <User />
 </Link>
 
 <button
-  className="icon header-bag"
+  className="icon"
   onClick={() => setCartOpen(true)}
 >
             <ShoppingBag />

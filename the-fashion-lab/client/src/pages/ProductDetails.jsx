@@ -47,10 +47,12 @@ export default function ProductDetails({
     wishlist.includes(product.id);
 
   const addToBag = () => {
-    for (let i = 0; i < qty; i++) {
-      add(product);
-    }
-  };
+  const quantity = Math.min(qty, product.stock);
+
+  for (let i = 0; i < quantity; i++) {
+    add(product);
+  }
+};
 
   return (
     <main className="premium-product-page">

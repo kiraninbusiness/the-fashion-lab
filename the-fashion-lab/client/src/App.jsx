@@ -981,12 +981,13 @@ export default function App() {
   return (
     <div className="site">
       <Header
-        cart={cart}
-        user={user}
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        setCartOpen={setCartOpen}
-      />
+  cart={cart}
+  user={user}
+  wishCount={wish.length}
+  openMenu={openMenu}
+  setOpenMenu={setOpenMenu}
+  setCartOpen={setCartOpen}
+/>
 
       <Routes>
         <Route

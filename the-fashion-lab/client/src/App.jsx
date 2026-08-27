@@ -887,7 +887,11 @@ function Cart({ cart, setCart, close }) {
 </button>
 
                       </div>
-
+{item.qty >= item.stock && (
+  <small className="stock-limit">
+    Maximum available quantity reached
+  </small>
+)}
                       <button
                         className="remove-item"
                         type="button"

@@ -865,25 +865,26 @@ function Cart({ cart, setCart, close }) {
                         <span>{item.qty}</span>
 
                         <button
-                          type="button"
-                          onClick={() =>
-                            setCart((c) =>
-                              c.map((x) =>
-                                x.id === item.id
-                                  ? {
-                                      ...x,
-                                      qty: Math.min(
-  x.stock,
-  x.qty + 1
-)
-                                    }
-                                  : x
-                              )
-                            )
-                          }
-                        >
-                          +
-                        </button>
+  type="button"
+  disabled={item.qty >= item.stock}
+  onClick={() =>
+    setCart((c) =>
+      c.map((x) =>
+        x.id === item.id
+          ? {
+              ...x,
+              qty: Math.min(
+                x.stock,
+                x.qty + 1
+              )
+            }
+          : x
+      )
+    )
+  }
+>
+  +
+</button>
 
                       </div>
 

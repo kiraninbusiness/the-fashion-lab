@@ -3965,3 +3965,11 @@
   }
 
 }
+.stock-limit {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}

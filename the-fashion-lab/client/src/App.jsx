@@ -27,6 +27,7 @@ const money = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
 function Header({
   cart,
   user,
+  wishCount,
   openMenu,
   setOpenMenu,
   setCartOpen

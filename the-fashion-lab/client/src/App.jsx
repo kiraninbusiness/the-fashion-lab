@@ -872,7 +872,10 @@ function Cart({ cart, setCart, close }) {
                                 x.id === item.id
                                   ? {
                                       ...x,
-                                      qty: x.qty + 1
+                                      qty: Math.min(
+  x.stock,
+  x.qty + 1
+)
                                     }
                                   : x
                               )
@@ -1072,28 +1075,37 @@ export default function App() {
   }, [wish]);
 
   const add = (p) =>
-    setCart((c) => {
-      const x = c.find(
-        (i) => i.id === p.id
-      );
+  setCart((c) => {
+    const x = c.find(
+      (i) => i.id === p.id
+    );
 
-      return x
-        ? c.map((i) =>
-            i.id === p.id
-              ? {
-                  ...i,
-                  qty: i.qty + 1
-                }
-              : i
-          )
-        : [
-            ...c,
-            {
-              ...p,
-              qty: 1
+    if (x) {
+      if (x.qty >= p.stock) {
+        return c;
+      }
+
+      return c.map((i) =>
+        i.id === p.id
+          ? {
+              ...i,
+              qty: Math.min(
+                p.stock,
+                i.qty + 1
+              )
             }
-          ];
-    });
+          : i
+      );
+    }
+
+    return [
+      ...c,
+      {
+        ...p,
+        qty: 1
+      }
+    ];
+  });
 
   const toggle = (id) =>
     setWish((w) =>

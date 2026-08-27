@@ -1060,10 +1060,42 @@ export default function App() {
     useState(false);
 
   useEffect(() => {
-    api("/products")
-      .then(setProducts)
-      .catch(console.error);
-  }, []);
+  api("/products")
+    .then((latestProducts) => {
+      setProducts(latestProducts);
+
+      // Update cart using latest available stock
+      setCart((currentCart) =>
+        currentCart
+          .map((item) => {
+            const latestProduct = latestProducts.find(
+              (p) => p.id === item.id
+            );
+
+            // Remove product if it no longer exists
+            if (!latestProduct) {
+              return null;
+            }
+
+            // Remove product if it is out of stock
+            if (Number(latestProduct.stock) < 1) {
+              return null;
+            }
+
+            return {
+              ...item,
+              ...latestProduct,
+              qty: Math.min(
+                item.qty,
+                Number(latestProduct.stock)
+              )
+            };
+          })
+          .filter(Boolean)
+      );
+    })
+    .catch(console.error);
+}, []);
 
   useEffect(() => {
     localStorage.setItem(

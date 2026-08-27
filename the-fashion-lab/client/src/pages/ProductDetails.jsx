@@ -47,7 +47,8 @@ export default function ProductDetails({
     wishlist.includes(product.id);
 
   const addToBag = () => {
-  const quantity = Math.min(qty, product.stock);
+  const stock = Number(product.stock) || 0;
+  const quantity = Math.min(qty, stock);
 
   for (let i = 0; i < quantity; i++) {
     add(product);
@@ -249,8 +250,11 @@ export default function ProductDetails({
 
                 <button
   type="button"
+  disabled={qty >= Number(product.stock)}
   onClick={() =>
-    setQty((q) => q + 1)
+    setQty((q) =>
+      Math.min(Number(product.stock), q + 1)
+    )
   }
   aria-label="Increase quantity"
 >

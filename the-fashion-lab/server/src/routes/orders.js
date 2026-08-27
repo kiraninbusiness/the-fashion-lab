@@ -241,7 +241,51 @@ router.get('/', auth, admin, async (req, res) => {
 /*
   ADMIN — UPDATE ORDER STATUS
 */
+/*
+  CUSTOMER — CANCEL OWN ORDER
+*/
 router.patch(
+  '/:id/cancel',
+  auth,
+  async (req, res) => {
+    try {
+      const { rows } = await pool.query(
+        `UPDATE orders
+         SET status = 'cancelled'
+         WHERE id = $1
+           AND user_id = $2
+           AND status = 'pending'
+         RETURNING *`,
+        [
+          req.params.id,
+          req.user.id
+        ]
+      );
+
+      if (!rows.length) {
+        return res.status(400).json({
+          message:
+            'This order cannot be cancelled.'
+        });
+      }
+
+      res.json({
+        order: rows[0]
+      });
+
+    } catch (e) {
+      console.error(
+        'CANCEL ORDER ERROR:',
+        e.message
+      );
+
+      res.status(500).json({
+        message:
+          'Could not cancel order'
+      });
+    }
+  }
+);router.patch(
   '/:id/status',
   auth,
   admin,

@@ -69,54 +69,60 @@ function Header({
           )}
         </nav>
 
-        <div className="actions">
-          <label className="search">
-            <Search size={17} />
+<div className="actions">
 
-            <input
-              placeholder="Search pieces..."
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                (window.location.href =
-                  "/shop?search=" +
-                  encodeURIComponent(e.currentTarget.value))
-              }
-            />
-          </label>
+  <label className="search">
+    <Search size={17} />
 
-          
-<Link
-  className="icon header-wishlist"
-  to="/wishlist"
-  aria-label="Wishlist"
->
-  <Heart />
-</Link>
-<Link className="icon header-wishlist" to="/wishlist">
-  <Heart />
+    <input
+      placeholder="Search pieces..."
+      onKeyDown={(e) =>
+        e.key === "Enter" &&
+        (window.location.href =
+          "/shop?search=" +
+          encodeURIComponent(e.currentTarget.value))
+      }
+    />
+  </label>
 
-  {wishCount > 0 && (
-    <b>{wishCount}</b>
-  )}
-</Link>
+  {/* WISHLIST */}
+  <Link
+    className="icon wishlist-header-icon"
+    to="/wishlist"
+    aria-label="Wishlist"
+  >
+    <Heart />
 
-<Link className="icon" to="/account">
-  <User />
-</Link>
+    {wish?.length > 0 && (
+      <b>{wish.length}</b>
+    )}
+  </Link>
 
-<button
-  className="icon"
-  onClick={() => setCartOpen(true)}
->
-            <ShoppingBag />
+  {/* ACCOUNT */}
+  <Link
+    className="icon"
+    to="/account"
+    aria-label="Account"
+  >
+    <User />
+  </Link>
 
-            {cart.length > 0 && (
-              <b>
-                {cart.reduce((s, i) => s + i.qty, 0)}
-              </b>
-            )}
-          </button>
-        </div>
+  {/* BAG */}
+  <button
+    className="icon"
+    onClick={() => setCartOpen(true)}
+    aria-label="Shopping bag"
+  >
+    <ShoppingBag />
+
+    {cart.length > 0 && (
+      <b>
+        {cart.reduce((s, i) => s + i.qty, 0)}
+      </b>
+    )}
+  </button>
+
+</div>
       </header>
     </>
   );

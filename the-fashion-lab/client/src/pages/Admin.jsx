@@ -41,4 +41,65 @@ export default function Admin({user}){const [products,setProducts]=useState([]),
     <small>Order value</small>
   </div>
 
-</div>{err&&<p className="error">{err}</p>}<div className="admin-grid"><form className="form-card" onSubmit={save}><div className="admin-form-head"><h2>{editing?"Edit product":"Add product"}</h2>{editing&&<button type="button" className="switch" onClick={()=>{setEditing(null);setF(empty)}}>Cancel edit</button>}</div>{[["name","Product name"],["price","Price"],["old_price","Original price"],["image","Image URL"],["size","Size"],["stock","Stock"]].map(([k,p])=><input key={k} required={k!=="old_price"} type={k.includes("price")||k==="stock"?"number":"text"} placeholder={p} value={f[k]} onChange={e=>change(k,e.target.value)}/>)}<textarea placeholder="Description" value={f.description} onChange={e=>change("description",e.target.value)}/><select value={f.category} onChange={e=>change("category",e.target.value)}><option>Vintage</option><option>Streetwear</option><option>Casual</option></select><select value={f.gender} onChange={e=>change("gender",e.target.value)}><option>Unisex</option><option>Men</option><option>Women</option></select><select value={f.condition} onChange={e=>change("condition",e.target.value)}><option>Excellent</option><option>Very Good</option><option>Good</option></select><button disabled={busy} className="button dark">{busy?"SAVING...":editing?"SAVE CHANGES":"ADD PRODUCT"}</button></form><section><div className="admin-section-head"><h2>Products ({products.length})</h2></div>{products.map(p=><div className="admin-row expanded" key={p.id}><div><b>{p.name}</b><span>₹{p.price} · stock {p.stock} · {p.category}</span></div><div className="row-actions"><button onClick={()=>edit(p)}>Edit</button><button onClick={()=>remove(p.id)}>Delete</button></div></div>)}<h2 className="orders-title">Orders ({orders.length})</h2>{orders.map(o=><div className="admin-row expanded" key={o.id}><div><b>#{o.id} · {o.name}</b><span>{o.email} · ₹{o.total} · {new Date(o.created_at).toLocaleDateString("en-IN")}</span></div><select value={o.status} onChange={e=>status(o.id,e.target.value)}><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>)}</section></div></main>}
+</div>{err&&<p className="error">{err}</p>}<div className="admin-grid"><form className="form-card" onSubmit={save}><div className="admin-form-head"><h2>{editing?"Edit product":"Add product"}</h2>{editing&&<button type="button" className="switch" onClick={()=>{setEditing(null);setF(empty)}}>Cancel edit</button>}</div>{[["name","Product name"],["price","Price"],["old_price","Original price"],["image","Image URL"],["size","Size"],["stock","Stock"]].map(([k,p])=><input key={k} required={k!=="old_price"} type={k.includes("price")||k==="stock"?"number":"text"} placeholder={p} value={f[k]} onChange={e=>change(k,e.target.value)}/>)}<textarea placeholder="Description" value={f.description} onChange={e=>change("description",e.target.value)}/><select value={f.category} onChange={e=>change("category",e.target.value)}><option>Vintage</option><option>Streetwear</option><option>Casual</option></select><select value={f.gender} onChange={e=>change("gender",e.target.value)}><option>Unisex</option><option>Men</option><option>Women</option></select><select value={f.condition} onChange={e=>change("condition",e.target.value)}><option>Excellent</option><option>Very Good</option><option>Good</option></select><button disabled={busy} className="button dark">{busy?"SAVING...":editing?"SAVE CHANGES":"ADD PRODUCT"}</button></form><section><div className="admin-section-head"><h2>Products ({products.length})</h2></div>{products.map((p) => (
+  <div
+    className="admin-row expanded"
+    key={p.id}
+  >
+    <div className="admin-product-info">
+
+      <img
+        src={p.image}
+        alt={p.name}
+        className="admin-product-image"
+      />
+
+      <div>
+        <b>{p.name}</b>
+
+        <span>
+          ₹{Number(p.price).toLocaleString("en-IN")}
+          {" · "}
+          {p.category}
+          {" · "}
+          {p.size}
+        </span>
+
+        <small
+          className={
+            Number(p.stock) === 0
+              ? "stock-sold"
+              : Number(p.stock) <= 2
+              ? "stock-low"
+              : "stock-good"
+          }
+        >
+          {Number(p.stock) === 0
+            ? "SOLD OUT"
+            : Number(p.stock) <= 2
+            ? `LOW STOCK · ${p.stock} LEFT`
+            : `IN STOCK · ${p.stock} AVAILABLE`}
+        </small>
+      </div>
+
+    </div>
+
+    <div className="row-actions">
+
+      <button
+        type="button"
+        onClick={() => edit(p)}
+      >
+        Edit
+      </button>
+
+      <button
+        type="button"
+        onClick={() => remove(p.id)}
+      >
+        Delete
+      </button>
+
+    </div>
+  </div>
+))}<div><b>{p.name}</b><span>₹{p.price} · stock {p.stock} · {p.category}</span></div><div className="row-actions"><button onClick={()=>edit(p)}>Edit</button><button onClick={()=>remove(p.id)}>Delete</button></div></div>)}<h2 className="orders-title">Orders ({orders.length})</h2>{orders.map(o=><div className="admin-row expanded" key={o.id}><div><b>#{o.id} · {o.name}</b><span>{o.email} · ₹{o.total} · {new Date(o.created_at).toLocaleDateString("en-IN")}</span></div><select value={o.status} onChange={e=>status(o.id,e.target.value)}><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>)}</section></div></main>}

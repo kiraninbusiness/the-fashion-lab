@@ -26,8 +26,8 @@ const money = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
 
 function Header({
   cart,
+  wish,
   user,
-  wishCount,
   openMenu,
   setOpenMenu,
   setCartOpen
@@ -988,8 +988,8 @@ export default function App() {
     <div className="site">
       <Header
   cart={cart}
+  wish={wish}
   user={user}
-  wishCount={wish.length}
   openMenu={openMenu}
   setOpenMenu={setOpenMenu}
   setCartOpen={setCartOpen}

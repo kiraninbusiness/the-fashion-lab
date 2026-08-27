@@ -519,26 +519,66 @@ function Home({ products, ...props }) {
 function Shop({ products, ...props }) {
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState("featured");
 
-  const list = products.filter(
-    (p) =>
-      (cat === "All" || p.category === cat) &&
-      `${p.name} ${p.category} ${p.gender}`
+  const filtered = products.filter((p) => {
+    const matchesCategory =
+      cat === "All" || p.category === cat;
+
+    const matchesSearch =
+      `${p.name} ${p.category} ${p.gender} ${p.size}`
         .toLowerCase()
-        .includes(q.toLowerCase())
-  );
+        .includes(q.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
+
+  const list = [...filtered].sort((a, b) => {
+    if (sort === "price-low") {
+      return Number(a.price) - Number(b.price);
+    }
+
+    if (sort === "price-high") {
+      return Number(b.price) - Number(a.price);
+    }
+
+    if (sort === "newest") {
+      return Number(b.id) - Number(a.id);
+    }
+
+    return 0;
+  });
+
+  const clearFilters = () => {
+    setCat("All");
+    setQ("");
+    setSort("featured");
+  };
 
   return (
-    <main className="page">
-      <p className="eyebrow">
-        THE CURRENT DROP
-      </p>
+    <main className="page shop-page">
 
-      <h1>
-        Shop the collection.
-      </h1>
+      <div className="shop-heading">
+
+        <div>
+          <p className="eyebrow">
+            THE CURRENT DROP
+          </p>
+
+          <h1>
+            Shop the collection.
+          </h1>
+
+          <p className="shop-result-count">
+            {list.length}{" "}
+            {list.length === 1 ? "piece" : "pieces"}
+          </p>
+        </div>
+
+      </div>
 
       <div className="shop-tools">
+
         <div className="filters">
           {[
             "All",
@@ -547,6 +587,7 @@ function Shop({ products, ...props }) {
             "Casual"
           ].map((c) => (
             <button
+              type="button"
               className={cat === c ? "active" : ""}
               onClick={() => setCat(c)}
               key={c}
@@ -556,22 +597,99 @@ function Shop({ products, ...props }) {
           ))}
         </div>
 
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search..."
-        />
+        <div className="shop-controls">
+
+          <input
+            value={q}
+            onChange={(e) =>
+              setQ(e.target.value)
+            }
+            placeholder="Search pieces..."
+          />
+
+          <select
+            value={sort}
+            onChange={(e) =>
+              setSort(e.target.value)
+            }
+          >
+            <option value="featured">
+              Featured
+            </option>
+
+            <option value="newest">
+              Newest
+            </option>
+
+            <option value="price-low">
+              Price: Low to High
+            </option>
+
+            <option value="price-high">
+              Price: High to Low
+            </option>
+          </select>
+
+        </div>
+
       </div>
 
-      <div className="grid">
-        {list.map((p) => (
-          <Card
-            key={p.id}
-            p={p}
-            {...props}
-          />
-        ))}
-      </div>
+      {(cat !== "All" || q || sort !== "featured") && (
+        <button
+          type="button"
+          className="clear-filters"
+          onClick={clearFilters}
+        >
+          CLEAR FILTERS
+        </button>
+      )}
+
+      {list.length > 0 ? (
+
+        <div className="grid">
+
+          {list.map((p) => (
+            <Card
+              key={p.id}
+              p={p}
+              {...props}
+            />
+          ))}
+
+        </div>
+
+      ) : (
+
+        <section className="shop-empty">
+
+          <p className="eyebrow">
+            NO PIECES FOUND
+          </p>
+
+          <h2>
+            Nothing matches
+            <br />
+            <em>your search.</em>
+          </h2>
+
+          <p>
+            Try another search or clear your filters
+            to explore the full collection.
+          </p>
+
+          <button
+            type="button"
+            className="button dark"
+            onClick={clearFilters}
+          >
+            VIEW ALL PIECES
+            <ArrowRight size={16} />
+          </button>
+
+        </section>
+
+      )}
+
     </main>
   );
 }

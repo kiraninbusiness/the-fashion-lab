@@ -112,6 +112,9 @@ function OrderTracking({ status }) {
 export default function Account({ user, setUser }) {
 
   const [mode, setMode] = useState("login");
+  const [forgotEmail, setForgotEmail] = useState("");
+const [forgotMessage, setForgotMessage] = useState("");
+const [forgotLoading, setForgotLoading] = useState(false);
 
   const [f, setF] = useState({
     name: "",

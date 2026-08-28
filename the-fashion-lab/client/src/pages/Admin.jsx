@@ -116,9 +116,13 @@ function OrderProgress({ status }) {
 export default function Admin({ user }) {
 
   const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
+const [orders, setOrders] = useState([]);
 
-  const [f, setF] = useState(empty);
+const [productSearch, setProductSearch] = useState("");
+const [productCategory, setProductCategory] = useState("All");
+const [stockFilter, setStockFilter] = useState("All");
+
+const [f, setF] = useState(empty);
   const [editing, setEditing] = useState(null);
 
   const [err, setErr] = useState("");
@@ -276,7 +280,33 @@ export default function Admin({ user }) {
   const pending = orders.filter(
     (o) => o.status === "pending"
   ).length;
+const filteredProducts = products.filter((p) => {
+  const search = productSearch.toLowerCase().trim();
 
+  const matchesSearch =
+    !search ||
+    `${p.name} ${p.category} ${p.gender} ${p.size}`
+      .toLowerCase()
+      .includes(search);
+
+  const matchesCategory =
+    productCategory === "All" ||
+    p.category === productCategory;
+
+  const stock = Number(p.stock || 0);
+
+  const matchesStock =
+    stockFilter === "All" ||
+    (stockFilter === "In Stock" && stock > 0) ||
+    (stockFilter === "Low Stock" && stock > 0 && stock <= 2) ||
+    (stockFilter === "Sold Out" && stock === 0);
+
+  return (
+    matchesSearch &&
+    matchesCategory &&
+    matchesStock
+  );
+});
   const delivered = orders.filter(
     (o) => o.status === "delivered"
   ).length;
@@ -648,15 +678,70 @@ export default function Admin({ user }) {
           </div>
 
 
-          <div className="admin-product-list">
+         <div className="admin-product-controls">
 
-            {products.map((p) => (
+  <input
+    type="search"
+    placeholder="Search products..."
+    value={productSearch}
+    onChange={(e) =>
+      setProductSearch(e.target.value)
+    }
+  />
+
+  <select
+    value={productCategory}
+    onChange={(e) =>
+      setProductCategory(e.target.value)
+    }
+  >
+    <option value="All">All Categories</option>
+    <option value="Vintage">Vintage</option>
+    <option value="Streetwear">Streetwear</option>
+    <option value="Casual">Casual</option>
+  </select>
+
+  <select
+    value={stockFilter}
+    onChange={(e) =>
+      setStockFilter(e.target.value)
+    }
+  >
+    <option value="All">All Stock</option>
+    <option value="In Stock">In Stock</option>
+    <option value="Low Stock">Low Stock</option>
+    <option value="Sold Out">Sold Out</option>
+  </select>
+
+</div>
+
+<div className="admin-product-results">
+  Showing {filteredProducts.length} of {products.length} products
+</div>
+
+<div className="admin-product-list">
+{filteredProducts.length === 0 ? (
+  <div className="admin-empty">
+    <ShoppingBag size={28} />
+    <h3>No products found</h3>
+    <p>
+      Try changing your search or filters.
+    </p>
+  </div>
+) : (
+  filteredProducts.map((p) => (
+  
 
               <article
                 className="admin-product-card"
                 key={p.id}
               >
+{/* existing product card */}
+      </article>
+    ))
+  )}
 
+</div>
                 <img
                   src={p.image}
                   alt={p.name}

@@ -418,7 +418,30 @@ const [forgotLoading, setForgotLoading] = useState(false);
       </main>
     );
   }
+async function forgotPassword(e) {
+  e.preventDefault();
 
+  setErr("");
+  setForgotMessage("");
+  setForgotLoading(true);
+
+  try {
+    const data = await api("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({
+        email: forgotEmail
+      })
+    });
+
+    setForgotMessage(data.message);
+
+  } catch (e) {
+    setErr(e.message || "Could not process request.");
+
+  } finally {
+    setForgotLoading(false);
+  }
+}
   async function submit(e) {
     e.preventDefault();
     setErr("");
@@ -480,7 +503,53 @@ const [forgotLoading, setForgotLoading] = useState(false);
             ? "Sign in to view your orders and continue your wardrobe story."
             : "Create an account to save your orders and discover your next favourite piece."}
         </p>
+{mode === "forgot" ? (
+  <form
+    className="premium-account-form"
+    onSubmit={forgotPassword}
+  >
 
+    <label>
+      EMAIL
+
+      <input
+        required
+        type="email"
+        placeholder="you@example.com"
+        value={forgotEmail}
+        onChange={(e) =>
+          setForgotEmail(e.target.value)
+        }
+      />
+    </label>
+
+    {err && (
+      <p className="error">
+        {err}
+      </p>
+    )}
+
+    {forgotMessage && (
+      <p className="success-message">
+        {forgotMessage}
+      </p>
+    )}
+
+    <button
+      disabled={forgotLoading}
+      className="auth-submit"
+    >
+      {forgotLoading
+        ? "PLEASE WAIT..."
+        : "SEND RESET LINK"}
+
+      {!forgotLoading && (
+        <ArrowRight size={16} />
+      )}
+    </button>
+
+  </form>
+) : (
         <form
           className="premium-account-form"
           onSubmit={submit}
@@ -573,9 +642,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
           </button>
 
         </form>
-
-        <button
-          className="auth-switch"
+)}
           onClick={() => {
             setErr("");
 

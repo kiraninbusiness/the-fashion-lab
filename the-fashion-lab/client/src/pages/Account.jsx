@@ -534,7 +534,18 @@ export default function Account({ user, setUser }) {
                 })
               }
               />
-
+{mode === "login" && (
+  <button
+    type="button"
+    className="forgot-password"
+    onClick={() => {
+      setErr("");
+      setMode("forgot");
+    }}
+  >
+    Forgot password?
+  </button>
+)}
           </label>
 
           {err && (

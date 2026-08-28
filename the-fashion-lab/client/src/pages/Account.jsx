@@ -2,94 +2,72 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Check,
-  Clock,
   LogOut,
   Package,
   ShoppingBag,
-  Truck,
   UserRound,
-  X
+  Truck,
+  CheckCircle,
+  Clock,
+  XCircle
 } from "lucide-react";
 import { api } from "../api";
 
 const money = (n) =>
   `₹${Number(n).toLocaleString("en-IN")}`;
 
-/*
-  ORDER STATUS HELPERS
-*/
-
-const statusSteps = [
-  {
-    key: "pending",
-    label: "Order Placed",
-    description: "Your order has been received."
-  },
-  {
-    key: "processing",
-    label: "Processing",
-    description: "We're preparing your order."
-  },
-  {
-    key: "shipped",
-    label: "Shipped",
-    description: "Your order is on its way."
-  },
-  {
-    key: "delivered",
-    label: "Delivered",
-    description: "Your order has been delivered."
-  }
-];
-
-function getStatusIndex(status) {
-  const index = statusSteps.findIndex(
-    (step) => step.key === status
-  );
-
-  return index === -1 ? 0 : index;
-}
-
-
-/*
-  ORDER TRACKING
-*/
-
 function OrderTracking({ status }) {
+  const steps = [
+    {
+      key: "pending",
+      label: "Order Placed",
+      icon: Clock
+    },
+    {
+      key: "processing",
+      label: "Processing",
+      icon: Package
+    },
+    {
+      key: "shipped",
+      label: "Shipped",
+      icon: Truck
+    },
+    {
+      key: "delivered",
+      label: "Delivered",
+      icon: CheckCircle
+    }
+  ];
+
   if (status === "cancelled") {
     return (
       <div className="order-tracking cancelled-tracking">
-
-        <div className="tracking-cancelled-icon">
-          <X size={20} />
+        <div className="tracking-step active cancelled">
+          <XCircle size={18} />
+          <span>
+            <strong>Order Cancelled</strong>
+            <small>
+              This order has been cancelled.
+            </small>
+          </span>
         </div>
-
-        <div className="tracking-cancelled-text">
-          <strong>Order Cancelled</strong>
-          <small>
-            This order has been cancelled successfully.
-          </small>
-        </div>
-
       </div>
     );
   }
 
-  const currentIndex = getStatusIndex(status);
+  const currentIndex = steps.findIndex(
+    (step) => step.key === status
+  );
 
   return (
     <div className="order-tracking">
 
-      <div className="tracking-line" />
-
-      {statusSteps.map((step, index) => {
+      {steps.map((step, index) => {
+        const Icon = step.icon;
 
         const completed =
-          index <= currentIndex;
-
-        const current =
-          index === currentIndex;
+          currentIndex >= index;
 
         return (
           <div
@@ -101,37 +79,27 @@ function OrderTracking({ status }) {
             key={step.key}
           >
 
-            <div
-              className={
-                current
-                  ? "tracking-dot current"
-                  : completed
-                  ? "tracking-dot"
-                  : "tracking-dot upcoming"
-              }
-            >
-              {completed ? (
-                <Check size={13} />
-              ) : (
-                <span>{index + 1}</span>
+            <div className="tracking-icon">
+              <Icon size={17} />
+            </div>
+
+            <span>
+              <strong>{step.label}</strong>
+
+              {completed && index === currentIndex && (
+                <small>Current status</small>
               )}
-            </div>
+            </span>
 
-            <div className="tracking-content">
-
-              <strong>
-                {step.label}
-              </strong>
-
-              <small>
-                {current
-                  ? step.description
-                  : index < currentIndex
-                  ? "Completed"
-                  : "Upcoming"}
-              </small>
-
-            </div>
+            {index < steps.length - 1 && (
+              <div
+                className={
+                  currentIndex > index
+                    ? "tracking-line active"
+                    : "tracking-line"
+                }
+              />
+            )}
 
           </div>
         );
@@ -141,14 +109,9 @@ function OrderTracking({ status }) {
   );
 }
 
+export default function Account({ user, setUser }) {
 
-export default function Account({
-  user,
-  setUser
-}) {
-
-  const [mode, setMode] =
-    useState("login");
+  const [mode, setMode] = useState("login");
 
   const [f, setF] = useState({
     name: "",
@@ -156,134 +119,68 @@ export default function Account({
     password: ""
   });
 
-  const [err, setErr] =
-    useState("");
-
-  const [orders, setOrders] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [cancelling, setCancelling] =
-    useState(null);
-
-  /*
-    LOAD ORDERS
-  */
-
-  useEffect(() => {
-
-    if (!user) return;
-
-    loadOrders();
-
-  }, [user]);
-
+  const [err, setErr] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [cancelId, setCancelId] = useState(null);
 
   async function loadOrders() {
-
     try {
-
-      const data =
-        await api("/orders/mine");
-
+      const data = await api("/orders/mine");
       setOrders(data);
-
     } catch (e) {
-
       console.error(e);
-
       setOrders([]);
-
     }
-
   }
 
-
-  /*
-    LOGOUT
-  */
+  useEffect(() => {
+    if (user) {
+      loadOrders();
+    }
+  }, [user]);
 
   function logout() {
-
-    localStorage.removeItem(
-      "thrift_token"
-    );
-
-    localStorage.removeItem(
-      "thrift_user"
-    );
-
+    localStorage.removeItem("thrift_token");
+    localStorage.removeItem("thrift_user");
     setUser(null);
-
   }
 
-
-  /*
-    CANCEL ORDER
-  */
-
-  async function cancelOrder(orderId) {
-
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to cancel this order?"
-      );
+  async function cancelOrder(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order?"
+    );
 
     if (!confirmed) return;
 
-    setCancelling(orderId);
-    setErr("");
+    setCancelId(id);
 
     try {
-
-      await api(
-        `/orders/${orderId}/cancel`,
-        {
-          method: "PATCH"
-        }
-      );
-
-      /*
-        Reload orders so the customer
-        immediately sees CANCELLED.
-      */
+      await api(`/orders/${id}/cancel`, {
+        method: "PATCH"
+      });
 
       await loadOrders();
 
-    } catch (e) {
+      alert("Order cancelled successfully.");
 
-      setErr(
+    } catch (e) {
+      alert(
         e.message ||
         "Could not cancel order."
       );
-
     } finally {
-
-      setCancelling(null);
-
+      setCancelId(null);
     }
-
   }
 
-
-  /*
-    LOGGED-IN ACCOUNT
-  */
-
   if (user) {
-
     return (
-
       <main className="account-premium">
-
-        {/* ACCOUNT HERO */}
 
         <section className="account-hero">
 
           <div>
-
             <p className="eyebrow">
               THE FASHION LAB
             </p>
@@ -297,7 +194,6 @@ export default function Account({
             <p className="account-email">
               {user.email}
             </p>
-
           </div>
 
           <div className="account-profile-icon">
@@ -306,34 +202,25 @@ export default function Account({
 
         </section>
 
-
-        {/* ACCOUNT TOOLBAR */}
-
         <section className="account-toolbar">
 
           <div className="account-welcome">
-
             <Package size={18} />
 
             <span>
-
               <strong>
                 Your wardrobe story
               </strong>
 
               <small>
-                Track and manage your orders.
+                Manage your orders and account.
               </small>
-
             </span>
-
           </div>
-
 
           <div className="account-actions">
 
             {user.role === "admin" && (
-
               <Link
                 className="account-admin-button"
                 to="/admin"
@@ -341,7 +228,6 @@ export default function Account({
                 ADMIN DASHBOARD
                 <ArrowRight size={15} />
               </Link>
-
             )}
 
             <button
@@ -356,15 +242,11 @@ export default function Account({
 
         </section>
 
-
-        {/* ORDERS */}
-
         <section className="account-orders">
 
           <div className="orders-heading">
 
             <div>
-
               <p className="eyebrow">
                 YOUR HISTORY
               </p>
@@ -372,30 +254,16 @@ export default function Account({
               <h2>
                 Your orders
               </h2>
-
             </div>
 
             <span>
-
               {orders.length}{" "}
-
               {orders.length === 1
                 ? "ORDER"
                 : "ORDERS"}
-
             </span>
 
           </div>
-
-
-          {err && (
-
-            <p className="error account-error">
-              {err}
-            </p>
-
-          )}
-
 
           {!orders.length ? (
 
@@ -441,8 +309,6 @@ export default function Account({
                   key={o.id}
                 >
 
-                  {/* ORDER HEADER */}
-
                   <div className="order-main">
 
                     <div className="order-icon">
@@ -476,9 +342,6 @@ export default function Account({
 
                   </div>
 
-
-                  {/* STATUS */}
-
                   <div className="order-status">
 
                     <span
@@ -489,14 +352,9 @@ export default function Account({
 
                   </div>
 
-
-                  {/* TOTAL */}
-
                   <div className="order-total">
 
-                    <span>
-                      TOTAL
-                    </span>
+                    <span>TOTAL</span>
 
                     <strong>
                       {money(o.total)}
@@ -504,93 +362,26 @@ export default function Account({
 
                   </div>
 
-
                   {/* TRACKING */}
 
-                  <div className="order-tracking-wrapper">
+                  <OrderTracking
+                    status={o.status}
+                  />
 
-                    <div className="tracking-title">
-
-                      <div>
-
-                        <p className="eyebrow">
-                          ORDER TRACKING
-                        </p>
-
-                        <strong>
-                          {o.status === "cancelled"
-                            ? "Order cancelled"
-                            : o.status === "delivered"
-                            ? "Your order has arrived"
-                            : o.status === "shipped"
-                            ? "Your order is on the way"
-                            : o.status === "processing"
-                            ? "We're preparing your order"
-                            : "Your order has been placed"}
-                        </strong>
-
-                      </div>
-
-                      {o.status === "shipped" && (
-                        <Truck size={20} />
-                      )}
-
-                      {o.status === "delivered" && (
-                        <Check size={20} />
-                      )}
-
-                      {o.status === "processing" && (
-                        <Package size={20} />
-                      )}
-
-                      {o.status === "pending" && (
-                        <Clock size={20} />
-                      )}
-
-                    </div>
-
-
-                    <OrderTracking
-                      status={o.status}
-                    />
-
-                  </div>
-
-
-                  {/* CANCEL BUTTON */}
+                  {/* CANCEL */}
 
                   {o.status === "pending" && (
-
-                    <div className="order-cancel-area">
-
-                      <p>
-                        You can cancel this order
-                        while it is still pending.
-                      </p>
-
-                      <button
-                        type="button"
-                        className="cancel-order-button"
-                        disabled={
-                          cancelling === o.id
-                        }
-                        onClick={() =>
-                          cancelOrder(o.id)
-                        }
-                      >
-
-                        {cancelling === o.id
-                          ? "CANCELLING..."
-                          : "CANCEL ORDER"}
-
-                        {cancelling !== o.id && (
-                          <X size={15} />
-                        )}
-
-                      </button>
-
-                    </div>
-
+                    <button
+                      className="cancel-order-button"
+                      disabled={cancelId === o.id}
+                      onClick={() =>
+                        cancelOrder(o.id)
+                      }
+                    >
+                      {cancelId === o.id
+                        ? "CANCELLING..."
+                        : "CANCEL ORDER"}
+                    </button>
                   )}
 
                 </article>
@@ -602,9 +393,6 @@ export default function Account({
           )}
 
         </section>
-
-
-        {/* FOOTER MESSAGE */}
 
         <section className="account-footer-message">
 
@@ -625,33 +413,23 @@ export default function Account({
         </section>
 
       </main>
-
     );
   }
 
-
-  /*
-    LOGIN / REGISTER
-  */
-
   async function submit(e) {
-
     e.preventDefault();
-
     setErr("");
     setLoading(true);
 
     try {
 
-      const d =
-        await api(
-          "/auth/" + mode,
-          {
-            method: "POST",
-            body: JSON.stringify(f)
-          }
-        );
-
+      const d = await api(
+        "/auth/" + mode,
+        {
+          method: "POST",
+          body: JSON.stringify(f)
+        }
+      );
 
       localStorage.setItem(
         "thrift_token",
@@ -663,42 +441,24 @@ export default function Account({
         JSON.stringify(d.user)
       );
 
-
       setUser(d.user);
 
     } catch (e) {
-
       setErr(e.message);
 
     } finally {
-
       setLoading(false);
-
     }
-
   }
 
-
   return (
-
     <main className="account-auth">
 
       <div className="auth-decoration">
-
-        <span>
-          THE
-        </span>
-
-        <em>
-          FASHION
-        </em>
-
-        <span>
-          LAB
-        </span>
-
+        <span>THE</span>
+        <em>FASHION</em>
+        <span>LAB</span>
       </div>
-
 
       <section className="auth-card">
 
@@ -707,21 +467,16 @@ export default function Account({
         </p>
 
         <h1>
-
           {mode === "login"
             ? "Welcome back."
             : "Join the Fashion Lab."}
-
         </h1>
 
         <p className="auth-intro">
-
           {mode === "login"
             ? "Sign in to view your orders and continue your wardrobe story."
             : "Create an account to save your orders and discover your next favourite piece."}
-
         </p>
-
 
         <form
           className="premium-account-form"
@@ -729,9 +484,7 @@ export default function Account({
         >
 
           {mode === "register" && (
-
             <label>
-
               FULL NAME
 
               <input
@@ -745,14 +498,10 @@ export default function Account({
                   })
                 }
               />
-
             </label>
-
           )}
 
-
           <label>
-
             EMAIL
 
             <input
@@ -767,12 +516,9 @@ export default function Account({
                 })
               }
             />
-
           </label>
 
-
           <label>
-
             PASSWORD
 
             <input
@@ -787,25 +533,20 @@ export default function Account({
                   password: e.target.value
                 })
               }
-            />
+              />
 
           </label>
 
-
           {err && (
-
             <p className="error">
               {err}
             </p>
-
           )}
-
 
           <button
             disabled={loading}
             className="auth-submit"
           >
-
             {loading
               ? "PLEASE WAIT..."
               : mode === "login"
@@ -815,16 +556,13 @@ export default function Account({
             {!loading && (
               <ArrowRight size={16} />
             )}
-
           </button>
 
         </form>
 
-
         <button
           className="auth-switch"
           onClick={() => {
-
             setErr("");
 
             setMode(
@@ -832,20 +570,15 @@ export default function Account({
                 ? "register"
                 : "login"
             );
-
           }}
         >
-
           {mode === "login"
             ? "Don't have an account? Create one"
             : "Already registered? Login"}
-
         </button>
 
       </section>
 
     </main>
-
   );
-
 }

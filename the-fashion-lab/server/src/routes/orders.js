@@ -6,7 +6,6 @@ import { auth, admin } from '../middleware/auth.js';
 
 const router = Router();
 
-
 /*
   CREATE ORDER
 */
@@ -191,17 +190,50 @@ router.post('/create', auth, async (req, res) => {
 
 /*
   CUSTOMER — MY ORDERS
+  Returns orders + purchased items
 */
 router.get('/mine', auth, async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT *
-     FROM orders
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [req.user.id]
-  );
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         o.*,
+         COALESCE(
+           json_agg(
+             json_build_object(
+               'product_id', oi.product_id,
+               'name', oi.name,
+               'price', oi.price,
+               'quantity', oi.quantity,
+               'item_total',
+                 (oi.price * oi.quantity)
+             )
+             ORDER BY oi.id
+           ) FILTER (
+             WHERE oi.id IS NOT NULL
+           ),
+           '[]'
+         ) AS items
+       FROM orders o
+       LEFT JOIN order_items oi
+         ON oi.order_id = o.id
+       WHERE o.user_id = $1
+       GROUP BY o.id
+       ORDER BY o.created_at DESC`,
+      [req.user.id]
+    );
 
-  res.json(rows);
+    res.json(rows);
+
+  } catch (e) {
+    console.error(
+      'MY ORDERS ERROR:',
+      e.message
+    );
+
+    res.status(500).json({
+      message: 'Could not load orders'
+    });
+  }
 });
 
 
@@ -304,21 +336,142 @@ router.patch(
 
 /*
   ADMIN — ALL ORDERS
+  Returns:
+  - Customer information
+  - Shipping information
+  - Payment information
+  - Order status
+  - Purchased products
+  - Quantity
+  - Product price
+  - Item total
 */
 router.get('/', auth, admin, async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT
-       o.*,
-       u.name,
-       u.email
-     FROM orders o
-     JOIN users u
-       ON u.id = o.user_id
-     ORDER BY o.created_at DESC`
-  );
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         o.*,
 
-  res.json(rows);
+         u.name AS customer_name,
+         u.email AS customer_email,
+
+         COALESCE(
+           json_agg(
+             json_build_object(
+               'product_id', oi.product_id,
+               'name', oi.name,
+               'price', oi.price,
+               'quantity', oi.quantity,
+               'item_total',
+                 (oi.price * oi.quantity)
+             )
+             ORDER BY oi.id
+           ) FILTER (
+             WHERE oi.id IS NOT NULL
+           ),
+           '[]'
+         ) AS items
+
+       FROM orders o
+
+       LEFT JOIN users u
+         ON u.id = o.user_id
+
+       LEFT JOIN order_items oi
+         ON oi.order_id = o.id
+
+       GROUP BY
+         o.id,
+         u.id
+
+       ORDER BY o.created_at DESC`
+    );
+
+    res.json(rows);
+
+  } catch (e) {
+    console.error(
+      'ADMIN ORDERS ERROR:',
+      e.message
+    );
+
+    res.status(500).json({
+      message: 'Could not load orders'
+    });
+  }
 });
+
+
+/*
+  ADMIN — SINGLE ORDER DETAILS
+*/
+router.get(
+  '/:id',
+  auth,
+  admin,
+  async (req, res) => {
+    try {
+      const { rows } = await pool.query(
+        `SELECT
+           o.*,
+
+           u.name AS customer_name,
+           u.email AS customer_email,
+
+           COALESCE(
+             json_agg(
+               json_build_object(
+                 'product_id', oi.product_id,
+                 'name', oi.name,
+                 'price', oi.price,
+                 'quantity', oi.quantity,
+                 'item_total',
+                   (oi.price * oi.quantity)
+               )
+               ORDER BY oi.id
+             ) FILTER (
+               WHERE oi.id IS NOT NULL
+             ),
+             '[]'
+           ) AS items
+
+         FROM orders o
+
+         LEFT JOIN users u
+           ON u.id = o.user_id
+
+         LEFT JOIN order_items oi
+           ON oi.order_id = o.id
+
+         WHERE o.id = $1
+
+         GROUP BY
+           o.id,
+           u.id`,
+        [req.params.id]
+      );
+
+      if (!rows.length) {
+        return res.status(404).json({
+          message: 'Order not found'
+        });
+      }
+
+      res.json(rows[0]);
+
+    } catch (e) {
+      console.error(
+        'ORDER DETAILS ERROR:',
+        e.message
+      );
+
+      res.status(500).json({
+        message:
+          'Could not load order details'
+      });
+    }
+  }
+);
 
 
 /*
@@ -334,22 +487,76 @@ router.patch(
       payment_status
     } = req.body;
 
-    const { rows } =
-      await pool.query(
-        `UPDATE orders
-         SET
-           status = COALESCE($1, status),
-           payment_status = COALESCE($2, payment_status)
-         WHERE id = $3
-         RETURNING *`,
-        [
-          status,
-          payment_status,
-          req.params.id
-        ]
+    const allowedStatuses = [
+      'pending',
+      'processing',
+      'shipped',
+      'delivered',
+      'cancelled'
+    ];
+
+    const allowedPaymentStatuses = [
+      'pending',
+      'paid',
+      'failed',
+      'refunded'
+    ];
+
+    if (
+      status !== undefined &&
+      !allowedStatuses.includes(status)
+    ) {
+      return res.status(400).json({
+        message: 'Invalid order status'
+      });
+    }
+
+    if (
+      payment_status !== undefined &&
+      !allowedPaymentStatuses.includes(
+        payment_status
+      )
+    ) {
+      return res.status(400).json({
+        message: 'Invalid payment status'
+      });
+    }
+
+    try {
+      const { rows } =
+        await pool.query(
+          `UPDATE orders
+           SET
+             status = COALESCE($1, status),
+             payment_status = COALESCE($2, payment_status)
+           WHERE id = $3
+           RETURNING *`,
+          [
+            status,
+            payment_status,
+            req.params.id
+          ]
+        );
+
+      if (!rows.length) {
+        return res.status(404).json({
+          message: 'Order not found'
+        });
+      }
+
+      res.json(rows[0]);
+
+    } catch (e) {
+      console.error(
+        'UPDATE ORDER STATUS ERROR:',
+        e.message
       );
 
-    res.json(rows[0]);
+      res.status(500).json({
+        message:
+          'Could not update order status'
+      });
+    }
   }
 );
 
@@ -412,6 +619,12 @@ router.post(
           req.user.id
         ]
       );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        message: 'Order not found'
+      });
+    }
 
     res.json(rows[0]);
   }

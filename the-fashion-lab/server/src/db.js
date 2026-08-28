@@ -23,9 +23,11 @@ export async function initDb(){
       condition TEXT DEFAULT 'Excellent',
       price INTEGER NOT NULL,
       old_price INTEGER,
-      image TEXT NOT NULL,
-      stock INTEGER NOT NULL DEFAULT 1,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+  image TEXT NOT NULL,
+images TEXT[] DEFAULT '{}',
+stock INTEGER NOT NULL DEFAULT 1,
+created_at TIMESTAMPTZ DEFAULT NOW()
+      
     );
     CREATE TABLE IF NOT EXISTS orders(
       id SERIAL PRIMARY KEY,
@@ -50,6 +52,9 @@ export async function initDb(){
     );
   `);
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod'");
+  await pool.query(
+  "ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'"
+);
   await pool.query(`
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS reset_token TEXT,

@@ -523,38 +523,25 @@ function Home({ products, ...props }) {
 );
 }
 function Shop({ products, ...props }) {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const [cat, setCat] = useState(
-    searchParams.get("category") || "All"
-  );
-
-  const [gender, setGender] = useState(
-    searchParams.get("gender") || "All"
-  );
-
-  const [size, setSize] = useState(
-    searchParams.get("size") || "All"
-  );
-
-  const [q, setQ] = useState(
-    searchParams.get("search") || ""
-  );
-
+  const [cat, setCat] = useState("All");
+  const [gender, setGender] = useState("All");
+  const [size, setSize] = useState("All");
+  const [price, setPrice] = useState("All");
+  const [q, setQ] = useState("");
   const [sort, setSort] = useState("featured");
+  const [filterOpen, setFilterOpen] = useState(false);
 
-  const [maxPrice, setMaxPrice] = useState(5000);
+  // Read search from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get("search");
 
-  const [onlyAvailable, setOnlyAvailable] =
-    useState(false);
+    if (search) {
+      setQ(search);
+    }
+  }, []);
 
-  const [filtersOpen, setFiltersOpen] =
-    useState(false);
-
-  // --------------------------------
-  // AVAILABLE FILTER OPTIONS
-  // --------------------------------
-
+  // Available filter values from products
   const categories = [
     "All",
     ...new Set(
@@ -582,185 +569,97 @@ function Shop({ products, ...props }) {
     )
   ];
 
-  const highestProductPrice =
-    products.length > 0
-      ? Math.max(
-          ...products.map((p) =>
-            Number(p.price)
-          )
-        )
-      : 5000;
-
-  const priceLimit = Math.max(
-    highestProductPrice,
-    5000
-  );
-
-  // --------------------------------
-  // FILTER PRODUCTS
-  // --------------------------------
-
   const filtered = products.filter((p) => {
-
     const matchesCategory =
-      cat === "All" ||
-      p.category === cat;
+      cat === "All" || p.category === cat;
 
     const matchesGender =
-      gender === "All" ||
-      p.gender === gender;
+      gender === "All" || p.gender === gender;
 
     const matchesSize =
-      size === "All" ||
-      p.size === size;
-
-    const matchesSearch =
-      `${p.name} ${p.category} ${p.gender} ${p.size}`
-        .toLowerCase()
-        .includes(
-          q.trim().toLowerCase()
-        );
+      size === "All" || p.size === size;
 
     const matchesPrice =
-      Number(p.price) <= Number(maxPrice);
+      price === "All" ||
+      (price === "under-500" &&
+        Number(p.price) < 500) ||
+      (price === "500-1000" &&
+        Number(p.price) >= 500 &&
+        Number(p.price) <= 1000) ||
+      (price === "1000-1500" &&
+        Number(p.price) > 1000 &&
+        Number(p.price) <= 1500) ||
+      (price === "above-1500" &&
+        Number(p.price) > 1500);
 
-    const matchesStock =
-      !onlyAvailable ||
-      Number(p.stock) > 0;
+    const searchText = `
+      ${p.name}
+      ${p.category}
+      ${p.gender}
+      ${p.size}
+      ${p.condition}
+      ${p.description}
+    `.toLowerCase();
+
+    const matchesSearch =
+      searchText.includes(q.toLowerCase().trim());
 
     return (
       matchesCategory &&
       matchesGender &&
       matchesSize &&
-      matchesSearch &&
       matchesPrice &&
-      matchesStock
+      matchesSearch
     );
   });
 
-  // --------------------------------
-  // SORT
-  // --------------------------------
-
-  const list = [...filtered].sort(
-    (a, b) => {
-
-      if (sort === "price-low") {
-        return (
-          Number(a.price) -
-          Number(b.price)
-        );
-      }
-
-      if (sort === "price-high") {
-        return (
-          Number(b.price) -
-          Number(a.price)
-        );
-      }
-
-      if (sort === "newest") {
-        return (
-          Number(b.id) -
-          Number(a.id)
-        );
-      }
-
-      if (sort === "discount") {
-
-        const discountA =
-          a.old_price
-            ? Number(a.old_price) -
-              Number(a.price)
-            : 0;
-
-        const discountB =
-          b.old_price
-            ? Number(b.old_price) -
-              Number(b.price)
-            : 0;
-
-        return discountB - discountA;
-      }
-
-      return 0;
+  const list = [...filtered].sort((a, b) => {
+    if (sort === "price-low") {
+      return Number(a.price) - Number(b.price);
     }
-  );
 
-  // --------------------------------
-  // CLEAR FILTERS
-  // --------------------------------
+    if (sort === "price-high") {
+      return Number(b.price) - Number(a.price);
+    }
+
+    if (sort === "newest") {
+      return Number(b.id) - Number(a.id);
+    }
+
+    return 0;
+  });
 
   const clearFilters = () => {
-
     setCat("All");
     setGender("All");
     setSize("All");
+    setPrice("All");
     setQ("");
     setSort("featured");
-    setMaxPrice(priceLimit);
-    setOnlyAvailable(false);
 
-    setSearchParams({});
+    window.history.replaceState(
+      {},
+      "",
+      "/shop"
+    );
   };
 
-  // --------------------------------
-  // UPDATE URL
-  // --------------------------------
-
-  useEffect(() => {
-
-    const params = {};
-
-    if (q.trim()) {
-      params.search = q.trim();
-    }
-
-    if (cat !== "All") {
-      params.category = cat;
-    }
-
-    if (gender !== "All") {
-      params.gender = gender;
-    }
-
-    if (size !== "All") {
-      params.size = size;
-    }
-
-    setSearchParams(
-      params,
-      { replace: true }
-    );
-
-  }, [
-    q,
-    cat,
-    gender,
-    size,
-    setSearchParams
-  ]);
-
-  const activeFilters =
+  const hasFilters =
     cat !== "All" ||
     gender !== "All" ||
     size !== "All" ||
-    q.trim() !== "" ||
-    maxPrice < priceLimit ||
-    onlyAvailable ||
+    price !== "All" ||
+    q !== "" ||
     sort !== "featured";
 
   return (
     <main className="page shop-page">
 
-      {/* ================================
-          SHOP HEADER
-      ================================= */}
+      {/* SHOP HEADER */}
 
       <div className="shop-heading">
 
         <div>
-
           <p className="eyebrow">
             THE CURRENT DROP
           </p>
@@ -775,403 +674,326 @@ function Shop({ products, ...props }) {
               ? "piece"
               : "pieces"}
           </p>
-
         </div>
 
       </div>
 
-      {/* ================================
-          MOBILE FILTER BUTTON
-      ================================= */}
+
+      {/* MOBILE FILTER BUTTON */}
 
       <button
         type="button"
         className="mobile-filter-button"
         onClick={() =>
-          setFiltersOpen(!filtersOpen)
+          setFilterOpen(!filterOpen)
         }
       >
-        {filtersOpen
+        {filterOpen
           ? "CLOSE FILTERS"
           : "FILTER & SORT"}
       </button>
 
-      {/* ================================
-          SHOP LAYOUT
-      ================================= */}
 
-      <div className="shop-layout">
+      {/* SHOP CONTROLS */}
 
-        {/* ==============================
-            FILTER SIDEBAR
-        =============================== */}
+      <div
+        className={
+          filterOpen
+            ? "shop-tools open"
+            : "shop-tools"
+        }
+      >
 
-        <aside
-          className={
-            filtersOpen
-              ? "shop-sidebar open"
-              : "shop-sidebar"
-          }
-        >
+        {/* CATEGORY */}
 
-          <div className="filter-header">
+        <div className="shop-filter-group">
 
-            <strong>
-              FILTERS
-            </strong>
+          <span className="filter-label">
+            CATEGORY
+          </span>
 
-            {activeFilters && (
+          <div className="filters">
+
+            {categories.map((c) => (
               <button
                 type="button"
-                onClick={clearFilters}
-              >
-                CLEAR ALL
-              </button>
-            )}
-
-          </div>
-
-          {/* SEARCH */}
-
-          <div className="filter-group">
-
-            <label>
-              SEARCH
-            </label>
-
-            <input
-              value={q}
-              onChange={(e) =>
-                setQ(e.target.value)
-              }
-              placeholder="Search pieces..."
-            />
-
-          </div>
-
-          {/* CATEGORY */}
-
-          <div className="filter-group">
-
-            <label>
-              CATEGORY
-            </label>
-
-            <div className="filter-options">
-
-              {categories.map((c) => (
-
-                <button
-                  type="button"
-                  key={c}
-                  className={
-                    cat === c
-                      ? "filter-option active"
-                      : "filter-option"
-                  }
-                  onClick={() =>
-                    setCat(c)
-                  }
-                >
-                  {c}
-                </button>
-
-              ))}
-
-            </div>
-
-          </div>
-
-          {/* GENDER */}
-
-          <div className="filter-group">
-
-            <label>
-              GENDER
-            </label>
-
-            <div className="filter-options">
-
-              {genders.map((g) => (
-
-                <button
-                  type="button"
-                  key={g}
-                  className={
-                    gender === g
-                      ? "filter-option active"
-                      : "filter-option"
-                  }
-                  onClick={() =>
-                    setGender(g)
-                  }
-                >
-                  {g}
-                </button>
-
-              ))}
-
-            </div>
-
-          </div>
-
-          {/* SIZE */}
-
-          <div className="filter-group">
-
-            <label>
-              SIZE
-            </label>
-
-            <div className="filter-options">
-
-              {sizes.map((s) => (
-
-                <button
-                  type="button"
-                  key={s}
-                  className={
-                    size === s
-                      ? "filter-option active"
-                      : "filter-option"
-                  }
-                  onClick={() =>
-                    setSize(s)
-                  }
-                >
-                  {s}
-                </button>
-
-              ))}
-
-            </div>
-
-          </div>
-
-          {/* PRICE */}
-
-          <div className="filter-group">
-
-            <div className="price-filter-head">
-
-              <label>
-                MAX PRICE
-              </label>
-
-              <strong>
-                {money(maxPrice)}
-              </strong>
-
-            </div>
-
-            <input
-              type="range"
-              min="0"
-              max={priceLimit}
-              step="100"
-              value={maxPrice}
-              onChange={(e) =>
-                setMaxPrice(
-                  Number(e.target.value)
-                )
-              }
-            />
-
-            <div className="price-range-labels">
-
-              <span>
-                ₹0
-              </span>
-
-              <span>
-                {money(priceLimit)}
-              </span>
-
-            </div>
-
-          </div>
-
-          {/* STOCK */}
-
-          <div className="filter-group">
-
-            <label className="checkbox-filter">
-
-              <input
-                type="checkbox"
-                checked={onlyAvailable}
-                onChange={(e) =>
-                  setOnlyAvailable(
-                    e.target.checked
-                  )
+                className={
+                  cat === c
+                    ? "active"
+                    : ""
                 }
-              />
-
-              <span>
-                SHOW ONLY AVAILABLE
-              </span>
-
-            </label>
+                onClick={() => setCat(c)}
+                key={c}
+              >
+                {c}
+              </button>
+            ))}
 
           </div>
 
-        </aside>
+        </div>
 
-        {/* ==============================
-            PRODUCTS AREA
-        =============================== */}
 
-        <section className="shop-products">
+        {/* GENDER */}
 
-          <div className="shop-topbar">
+        <div className="shop-filter-group">
 
-            <div>
+          <span className="filter-label">
+            GENDER
+          </span>
 
-              <span>
-                {list.length}{" "}
-                {list.length === 1
-                  ? "PIECE"
-                  : "PIECES"}
-              </span>
+          <div className="filters">
 
-            </div>
+            {genders.map((g) => (
+              <button
+                type="button"
+                className={
+                  gender === g
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setGender(g)
+                }
+                key={g}
+              >
+                {g}
+              </button>
+            ))}
 
-            <select
-              value={sort}
-              onChange={(e) =>
-                setSort(e.target.value)
+          </div>
+
+        </div>
+
+
+        {/* SIZE */}
+
+        <div className="shop-filter-group">
+
+          <span className="filter-label">
+            SIZE
+          </span>
+
+          <div className="filters">
+
+            {sizes.map((s) => (
+              <button
+                type="button"
+                className={
+                  size === s
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setSize(s)
+                }
+                key={s}
+              >
+                {s}
+              </button>
+            ))}
+
+          </div>
+
+        </div>
+
+
+        {/* PRICE */}
+
+        <div className="shop-filter-group">
+
+          <span className="filter-label">
+            PRICE
+          </span>
+
+          <div className="filters">
+
+            <button
+              type="button"
+              className={
+                price === "All"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setPrice("All")
               }
             >
+              ALL
+            </button>
 
-              <option value="featured">
-                Featured
-              </option>
+            <button
+              type="button"
+              className={
+                price === "under-500"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setPrice("under-500")
+              }
+            >
+              UNDER ₹500
+            </button>
 
-              <option value="newest">
-                Newest
-              </option>
+            <button
+              type="button"
+              className={
+                price === "500-1000"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setPrice("500-1000")
+              }
+            >
+              ₹500 – ₹1,000
+            </button>
 
-              <option value="price-low">
-                Price: Low to High
-              </option>
+            <button
+              type="button"
+              className={
+                price === "1000-1500"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setPrice("1000-1500")
+              }
+            >
+              ₹1,000 – ₹1,500
+            </button>
 
-              <option value="price-high">
-                Price: High to Low
-              </option>
-
-              <option value="discount">
-                Biggest Discount
-              </option>
-
-            </select>
+            <button
+              type="button"
+              className={
+                price === "above-1500"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setPrice("above-1500")
+              }
+            >
+              ABOVE ₹1,500
+            </button>
 
           </div>
 
-          {/* ACTIVE FILTERS */}
+        </div>
 
-          {activeFilters && (
-            <div className="active-filter-bar">
 
-              {q && (
-                <span>
-                  Search: "{q}"
-                </span>
-              )}
+        {/* SEARCH + SORT */}
 
-              {cat !== "All" && (
-                <span>
-                  {cat}
-                </span>
-              )}
+        <div className="shop-controls">
 
-              {gender !== "All" && (
-                <span>
-                  {gender}
-                </span>
-              )}
+          <input
+            value={q}
+            onChange={(e) =>
+              setQ(e.target.value)
+            }
+            placeholder="Search pieces..."
+            aria-label="Search pieces"
+          />
 
-              {size !== "All" && (
-                <span>
-                  Size {size}
-                </span>
-              )}
+          <select
+            value={sort}
+            onChange={(e) =>
+              setSort(e.target.value)
+            }
+            aria-label="Sort products"
+          >
 
-              {onlyAvailable && (
-                <span>
-                  In Stock
-                </span>
-              )}
+            <option value="featured">
+              Featured
+            </option>
 
-              {maxPrice < priceLimit && (
-                <span>
-                  Under {money(maxPrice)}
-                </span>
-              )}
+            <option value="newest">
+              Newest
+            </option>
 
-              <button
-                type="button"
-                onClick={clearFilters}
-              >
-                CLEAR ALL
-              </button>
+            <option value="price-low">
+              Price: Low to High
+            </option>
 
-            </div>
-          )}
+            <option value="price-high">
+              Price: High to Low
+            </option>
 
-          {/* PRODUCTS */}
+          </select>
 
-          {list.length > 0 ? (
+        </div>
 
-            <div className="grid">
+      </div>
 
-              {list.map((p) => (
 
-                <Card
-                  key={p.id}
-                  p={p}
-                  {...props}
-                />
+      {/* ACTIVE FILTERS */}
 
-              ))}
+      {hasFilters && (
+        <div className="active-filter-bar">
 
-            </div>
+          <span>
+            {list.length} RESULTS
+          </span>
 
-          ) : (
+          <button
+            type="button"
+            onClick={clearFilters}
+          >
+            CLEAR ALL
+          </button>
 
-            <section className="shop-empty">
+        </div>
+      )}
 
-              <p className="eyebrow">
-                NO PIECES FOUND
-              </p>
 
-              <h2>
-                Nothing matches
-                <br />
-                <em>your search.</em>
-              </h2>
+      {/* PRODUCTS */}
 
-              <p>
-                Try changing your filters
-                or explore the complete
-                collection.
-              </p>
+      {list.length > 0 ? (
 
-              <button
-                type="button"
-                className="button dark"
-                onClick={clearFilters}
-              >
-                VIEW ALL PIECES
-                <ArrowRight size={16} />
-              </button>
+        <div className="grid">
 
-            </section>
+          {list.map((p) => (
+            <Card
+              key={p.id}
+              p={p}
+              {...props}
+            />
+          ))}
 
-          )}
+        </div>
+
+      ) : (
+
+        <section className="shop-empty">
+
+          <p className="eyebrow">
+            NO PIECES FOUND
+          </p>
+
+          <h2>
+            Nothing matches
+            <br />
+            <em>your search.</em>
+          </h2>
+
+          <p>
+            Try changing your filters or
+            searching for another piece.
+          </p>
+
+          <button
+            type="button"
+            className="button dark"
+            onClick={clearFilters}
+          >
+            VIEW ALL PIECES
+            <ArrowRight size={16} />
+          </button>
 
         </section>
 
-      </div>
+      )}
 
     </main>
   );

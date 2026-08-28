@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, {
+  useRef,
+  useState
+} from "react";
+
+import {
+  Link,
+  useNavigate
+} from "react-router-dom";
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,39 +15,91 @@ import {
   Truck,
   ShieldCheck
 } from "lucide-react";
+
 import { api } from "../api";
 
+
 const money = (n) =>
-  `₹${Number(n).toLocaleString("en-IN")}`;
+  `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
 
 export default function Checkout({
   cart,
   user,
   clearCart
 }) {
-  const nav = useNavigate();
 
-  const [f, setF] = useState({
-    name: user?.name || "",
-    phone: "",
-    address: "",
-    city: "",
-    pincode: ""
-  });
+  const nav =
+    useNavigate();
 
-  const [method, setMethod] = useState("cod");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
 
-  const subtotal = cart.reduce(
-    (s, i) => s + Number(i.price) * Number(i.qty),
-    0
-  );
+  const [f, setF] =
+    useState({
+      name:
+        user?.name || "",
 
-  const shipping = subtotal >= 1499 ? 0 : 79;
-  const total = subtotal + shipping;
+      phone:
+        "",
 
+      address:
+        "",
+
+      city:
+        "",
+
+      pincode:
+        ""
+    });
+
+
+  const [method, setMethod] =
+    useState("cod");
+
+
+  const [busy, setBusy] =
+    useState(false);
+
+
+  const [err, setErr] =
+    useState("");
+
+
+  /*
+    Prevent Razorpay success from being
+    treated as a cancelled payment.
+  */
+  const paymentCompleted =
+    useRef(false);
+
+
+  /*
+    CART TOTALS
+  */
+  const subtotal =
+    cart.reduce(
+      (s, i) =>
+        s +
+        Number(i.price) *
+        Number(i.qty),
+      0
+    );
+
+
+  const shipping =
+    subtotal >= 1499
+      ? 0
+      : 79;
+
+
+  const total =
+    subtotal + shipping;
+
+
+  /*
+    EMPTY CART
+  */
   if (!cart.length) {
+
     return (
       <main className="checkout-empty">
 
@@ -47,7 +107,9 @@ export default function Checkout({
           THE FASHION LAB
         </p>
 
-        <h1>Your bag is empty.</h1>
+        <h1>
+          Your bag is empty.
+        </h1>
 
         <p>
           Discover something special for your
@@ -59,6 +121,7 @@ export default function Checkout({
           to="/shop"
         >
           SHOP THE COLLECTION
+
           <ArrowRight size={16} />
         </Link>
 
@@ -66,237 +129,498 @@ export default function Checkout({
     );
   }
 
+
   /*
-    Load Razorpay checkout script
+    LOAD RAZORPAY SCRIPT
   */
   const loadRazorpay = () => {
-    return new Promise((resolve) => {
 
-      if (window.Razorpay) {
-        resolve(true);
-        return;
+    return new Promise(
+      (resolve) => {
+
+        if (
+          window.Razorpay
+        ) {
+          resolve(true);
+          return;
+        }
+
+
+        const script =
+          document.createElement(
+            "script"
+          );
+
+
+        script.src =
+          "https://checkout.razorpay.com/v1/checkout.js";
+
+
+        script.onload = () =>
+          resolve(true);
+
+
+        script.onerror = () =>
+          resolve(false);
+
+
+        document.body.appendChild(
+          script
+        );
       }
-
-      const script =
-        document.createElement("script");
-
-      script.src =
-        "https://checkout.razorpay.com/v1/checkout.js";
-
-      script.onload = () =>
-        resolve(true);
-
-      script.onerror = () =>
-        resolve(false);
-
-      document.body.appendChild(script);
-    });
+    );
   };
 
 
   /*
-    COD ORDER
+    CREATE COD ORDER
   */
   async function createCODOrder() {
 
-    const d = await api(
-      "/orders/create",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          items: cart.map((i) => ({
-            productId: i.id,
-            quantity: Number(i.qty)
-          })),
+    const d =
+      await api(
+        "/orders/create",
+        {
+          method: "POST",
 
-          shipping: {
-            ...f,
-            address:
-              `${f.address}, ${f.city} - ${f.pincode}`
-          },
+          body:
+            JSON.stringify({
 
-          payment_method: "cod"
-        })
-      }
-    );
+              items:
+                cart.map(
+                  (i) => ({
+                    productId:
+                      i.id,
 
+                    quantity:
+                      Number(i.qty)
+                  })
+                ),
+
+
+              shipping: {
+                ...f,
+
+                address:
+                  `${f.address}, ${f.city} - ${f.pincode}`
+              },
+
+
+              payment_method:
+                "cod"
+            })
+        }
+      );
+
+
+    /*
+      Order successfully created.
+    */
     clearCart();
 
-    nav("/success", {
-      state: {
-        order: d.order,
-        paymentMethod: "cod"
+
+    nav(
+      "/success",
+      {
+        state: {
+          order:
+            d.order,
+
+          paymentMethod:
+            "cod"
+        }
       }
-    });
+    );
   }
 
 
   /*
-    ONLINE PAYMENT
+    CANCEL UNPAID ONLINE ORDER
+    AND RESTORE STOCK
+  */
+  async function cancelUnpaidOrder(
+    orderId
+  ) {
+
+    if (!orderId) {
+      return;
+    }
+
+
+    try {
+
+      await api(
+        `/orders/${orderId}/payment-cancel`,
+        {
+          method:
+            "PATCH"
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "PAYMENT CANCEL ERROR:",
+        error
+      );
+
+    }
+  }
+
+
+  /*
+    CREATE ONLINE ORDER
   */
   async function createOnlineOrder() {
 
-    const loaded = await loadRazorpay();
-
-    if (!loaded) {
-      throw new Error(
-        "Unable to load Razorpay. Please check your internet connection."
-      );
-    }
-
     /*
-      First create order on our backend
-    */
-    const d = await api(
-      "/orders/create",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          items: cart.map((i) => ({
-            productId: i.id,
-            quantity: Number(i.qty)
-          })),
+      Check frontend Razorpay key
+      BEFORE creating the database order.
 
-          shipping: {
-            ...f,
-            address:
-              `${f.address}, ${f.city} - ${f.pincode}`
-          },
-
-          payment_method: "online"
-        })
-      }
-    );
-
-    const order = d.order;
-
-    /*
-      Razorpay public key
+      This prevents an order from being created
+      when Razorpay cannot be opened.
     */
     const key =
-      import.meta.env.VITE_RAZORPAY_KEY_ID;
+      import.meta.env
+        .VITE_RAZORPAY_KEY_ID;
+
 
     if (!key) {
+
       throw new Error(
         "Razorpay key is not configured on the frontend."
       );
     }
 
+
     /*
-      Open Razorpay
+      Load Razorpay
+    */
+    const loaded =
+      await loadRazorpay();
+
+
+    if (!loaded) {
+
+      throw new Error(
+        "Unable to load Razorpay. Please check your internet connection."
+      );
+    }
+
+
+    /*
+      Create order on backend
+    */
+    const d =
+      await api(
+        "/orders/create",
+        {
+          method: "POST",
+
+          body:
+            JSON.stringify({
+
+              items:
+                cart.map(
+                  (i) => ({
+                    productId:
+                      i.id,
+
+                    quantity:
+                      Number(i.qty)
+                  })
+                ),
+
+
+              shipping: {
+                ...f,
+
+                address:
+                  `${f.address}, ${f.city} - ${f.pincode}`
+              },
+
+
+              payment_method:
+                "online"
+            })
+        }
+      );
+
+
+    const order =
+      d.order;
+
+
+    if (
+      !order?.razorpay_order_id
+    ) {
+
+      throw new Error(
+        "Razorpay order could not be created."
+      );
+    }
+
+
+    /*
+      Reset payment completion state
+    */
+    paymentCompleted.current =
+      false;
+
+
+    /*
+      Razorpay checkout options
     */
     const options = {
 
       key,
 
+      /*
+        IMPORTANT:
+        Use backend order total.
+
+        This includes shipping.
+      */
       amount:
-        Number(total) * 100,
+        Math.round(
+          Number(order.total) * 100
+        ),
 
-      currency: "INR",
 
-      name: "The Fashion Lab",
+      currency:
+        "INR",
+
+
+      name:
+        "The Fashion Lab",
+
 
       description:
         "Pre-loved fashion order",
 
+
       order_id:
         order.razorpay_order_id,
 
+
       prefill: {
-        name: f.name,
-        contact: f.phone,
-        email: user?.email || ""
+
+        name:
+          f.name,
+
+        contact:
+          f.phone,
+
+        email:
+          user?.email || ""
       },
 
+
       notes: {
+
         address:
           `${f.address}, ${f.city} - ${f.pincode}`
       },
 
+
       theme: {
-        color: "#111111"
+        color:
+          "#111111"
       },
 
-      handler: async function (response) {
 
-        try {
+      /*
+        SUCCESS
+      */
+      handler:
+        async function (
+          response
+        ) {
 
           /*
-            Verify payment with backend
+            Mark this payment as completed
+            before Razorpay closes the modal.
           */
-          const verified =
-            await api(
-              "/orders/verify-payment",
+          paymentCompleted.current =
+            true;
+
+
+          try {
+
+            /*
+              Verify payment on backend.
+            */
+            const verified =
+              await api(
+                "/orders/verify-payment",
+                {
+                  method:
+                    "POST",
+
+                  body:
+                    JSON.stringify({
+
+                      orderId:
+                        order.id,
+
+                      razorpay_order_id:
+                        response.razorpay_order_id,
+
+                      razorpay_payment_id:
+                        response.razorpay_payment_id,
+
+                      razorpay_signature:
+                        response.razorpay_signature
+                    })
+                }
+              );
+
+
+            /*
+              Payment verified successfully.
+            */
+            clearCart();
+
+
+            nav(
+              "/success",
               {
-                method: "POST",
+                state: {
 
-                body: JSON.stringify({
-                  orderId: order.id,
+                  order:
+                    verified ||
+                    order,
 
-                  razorpay_order_id:
-                    response.razorpay_order_id,
-
-                  razorpay_payment_id:
-                    response.razorpay_payment_id,
-
-                  razorpay_signature:
-                    response.razorpay_signature
-                })
+                  paymentMethod:
+                    "online"
+                }
               }
             );
 
-          clearCart();
+          } catch (error) {
 
-          nav("/success", {
-            state: {
-              order:
-                verified || order,
-              paymentMethod: "online"
-            }
-          });
+            /*
+              IMPORTANT:
+              Do NOT automatically cancel and restore
+              stock here.
 
-        } catch (error) {
+              The payment may have succeeded even if
+              verification response failed because of
+              a temporary network problem.
+            */
+            console.error(
+              "PAYMENT VERIFICATION ERROR:",
+              error
+            );
 
-          setErr(
-            error.message ||
-              "Payment verification failed."
-          );
 
-          setBusy(false);
-        }
-      },
+            setErr(
+              error.message ||
+              "Payment verification failed. Please contact support if your payment was deducted."
+            );
 
+
+            setBusy(false);
+          }
+        },
+
+
+      /*
+        USER CLOSES RAZORPAY
+      */
       modal: {
-        ondismiss: function () {
-          setBusy(false);
-          setErr(
-            "Payment was cancelled. Your order was not completed."
-          );
-        }
+
+        ondismiss:
+          async function () {
+
+            /*
+              If payment was successfully completed,
+              do not cancel the order.
+            */
+            if (
+              paymentCompleted.current
+            ) {
+              return;
+            }
+
+
+            /*
+              Payment window was closed
+              without successful payment.
+
+              Cancel the order and restore stock.
+            */
+            await cancelUnpaidOrder(
+              order.id
+            );
+
+
+            setBusy(false);
+
+
+            setErr(
+              "Payment was cancelled. Your order was not completed."
+            );
+          }
       }
     };
 
-    const razorpay =
-      new window.Razorpay(options);
 
+    /*
+      Create Razorpay instance
+    */
+    const razorpay =
+      new window.Razorpay(
+        options
+      );
+
+
+    /*
+      PAYMENT FAILED
+    */
     razorpay.on(
       "payment.failed",
-      function (response) {
+      async function (
+        response
+      ) {
 
         console.error(
           "RAZORPAY PAYMENT FAILED:",
           response
         );
 
+
+        /*
+          Make sure success handler is
+          not treated as cancellation.
+        */
+        paymentCompleted.current =
+          false;
+
+
+        /*
+          Cancel unpaid order
+          and restore stock.
+        */
+        await cancelUnpaidOrder(
+          order.id
+        );
+
+
         setBusy(false);
+
 
         setErr(
           response?.error?.description ||
-            "Payment failed. Please try again."
+          "Payment failed. Please try again."
         );
       }
     );
 
+
+    /*
+      OPEN RAZORPAY
+    */
     razorpay.open();
   }
 
@@ -308,34 +632,46 @@ export default function Checkout({
 
     e.preventDefault();
 
+
     if (!user) {
-      nav("/account");
+
+      nav(
+        "/account"
+      );
+
       return;
     }
+
 
     setBusy(true);
     setErr("");
 
+
     try {
 
-      if (method === "cod") {
+      if (
+        method === "cod"
+      ) {
 
         await createCODOrder();
 
       } else {
 
         await createOnlineOrder();
-
       }
 
     } catch (x) {
 
-      console.error(x);
+      console.error(
+        x
+      );
+
 
       setErr(
         x.message ||
-          "Could not place your order."
+        "Could not place your order."
       );
+
 
       setBusy(false);
     }
@@ -345,20 +681,31 @@ export default function Checkout({
   return (
     <main className="checkout-page">
 
+      {/* TOP */}
+
       <div className="checkout-top">
 
         <Link to="/shop">
+
           <ArrowLeft size={15} />
+
           CONTINUE SHOPPING
+
         </Link>
 
+
         <div className="secure-label">
+
           <Lock size={13} />
+
           SECURE CHECKOUT
+
         </div>
 
       </div>
 
+
+      {/* HEADING */}
 
       <section className="checkout-heading">
 
@@ -366,16 +713,25 @@ export default function Checkout({
           THE FASHION LAB
         </p>
 
+
         <h1>
+
           Complete
+
           <br />
-          <em>your order.</em>
+
+          <em>
+            your order.
+          </em>
+
         </h1>
 
       </section>
 
 
       <div className="checkout-grid premium-checkout-grid">
+
+        {/* FORM */}
 
         <form
           className="checkout-form"
@@ -388,9 +744,13 @@ export default function Checkout({
 
             <div className="checkout-section-heading">
 
-              <span>01</span>
+              <span>
+                01
+              </span>
+
 
               <div>
+
                 <h2>
                   Delivery details
                 </h2>
@@ -398,6 +758,7 @@ export default function Checkout({
                 <p>
                   Where should we send your pieces?
                 </p>
+
               </div>
 
             </div>
@@ -405,7 +766,10 @@ export default function Checkout({
 
             <div className="checkout-fields">
 
+              {/* NAME */}
+
               <label>
+
                 FULL NAME
 
                 <input
@@ -415,20 +779,26 @@ export default function Checkout({
                   onChange={(e) =>
                     setF({
                       ...f,
-                      name: e.target.value
+                      name:
+                        e.target.value
                     })
                   }
                 />
+
               </label>
 
 
+              {/* PHONE */}
+
               <label>
+
                 PHONE NUMBER
 
                 <input
                   required
                   pattern="[0-9]{10}"
                   maxLength="10"
+                  inputMode="numeric"
                   placeholder="10-digit phone number"
                   value={f.phone}
                   onChange={(e) =>
@@ -442,10 +812,14 @@ export default function Checkout({
                     })
                   }
                 />
+
               </label>
 
 
+              {/* ADDRESS */}
+
               <label>
+
                 ADDRESS
 
                 <textarea
@@ -456,16 +830,21 @@ export default function Checkout({
                   onChange={(e) =>
                     setF({
                       ...f,
-                      address: e.target.value
+                      address:
+                        e.target.value
                     })
                   }
                 />
+
               </label>
 
+
+              {/* CITY + PINCODE */}
 
               <div className="two-inputs">
 
                 <label>
+
                   CITY
 
                   <input
@@ -475,20 +854,24 @@ export default function Checkout({
                     onChange={(e) =>
                       setF({
                         ...f,
-                        city: e.target.value
+                        city:
+                          e.target.value
                       })
                     }
                   />
+
                 </label>
 
 
                 <label>
+
                   PINCODE
 
                   <input
                     required
                     pattern="[0-9]{6}"
                     maxLength="6"
+                    inputMode="numeric"
                     placeholder="6-digit pincode"
                     value={f.pincode}
                     onChange={(e) =>
@@ -502,6 +885,7 @@ export default function Checkout({
                       })
                     }
                   />
+
                 </label>
 
               </div>
@@ -517,9 +901,13 @@ export default function Checkout({
 
             <div className="checkout-section-heading">
 
-              <span>02</span>
+              <span>
+                02
+              </span>
+
 
               <div>
+
                 <h2>
                   Payment
                 </h2>
@@ -527,6 +915,7 @@ export default function Checkout({
                 <p>
                   Choose how you'd like to pay.
                 </p>
+
               </div>
 
             </div>
@@ -555,7 +944,9 @@ export default function Checkout({
                   }
                 />
 
+
                 <div>
+
                   <strong>
                     Cash on Delivery
                   </strong>
@@ -563,7 +954,9 @@ export default function Checkout({
                   <small>
                     Pay when your order arrives.
                   </small>
+
                 </div>
+
 
                 <span className="payment-check">
                   ✓
@@ -593,7 +986,9 @@ export default function Checkout({
                   }
                 />
 
+
                 <div>
+
                   <strong>
                     Online Payment
                   </strong>
@@ -601,7 +996,9 @@ export default function Checkout({
                   <small>
                     Pay securely with Razorpay.
                   </small>
+
                 </div>
+
 
                 <span className="payment-check">
                   ✓
@@ -613,17 +1010,23 @@ export default function Checkout({
 
 
             {method === "online" && (
+
               <p className="notice">
+
                 You will be redirected to the
                 secure Razorpay payment window.
+
               </p>
+
             )}
 
 
             {err && (
+
               <p className="error">
                 {err}
               </p>
+
             )}
 
           </section>
@@ -638,29 +1041,42 @@ export default function Checkout({
           >
 
             {busy
+
               ? method === "online"
+
                 ? "OPENING PAYMENT..."
+
                 : "CREATING ORDER..."
+
               : method === "online"
+
                 ? "PAY NOW"
-                : "PLACE ORDER"}
+
+                : "PLACE ORDER"
+            }
+
 
             {!busy && (
-              <ArrowRight size={17} />
+              <ArrowRight
+                size={17}
+              />
             )}
 
           </button>
 
 
           <p className="checkout-security">
+
             <Lock size={13} />
+
             Your information is securely handled.
+
           </p>
 
         </form>
 
 
-        {/* SUMMARY */}
+        {/* ORDER SUMMARY */}
 
         <aside className="premium-order-summary">
 
@@ -678,22 +1094,29 @@ export default function Checkout({
 
             </div>
 
+
             <span>
 
               {cart.reduce(
                 (s, i) =>
-                  s + Number(i.qty),
+                  s +
+                  Number(i.qty),
                 0
               )}
 
+
               {" "}
+
 
               {cart.reduce(
                 (s, i) =>
-                  s + Number(i.qty),
+                  s +
+                  Number(i.qty),
                 0
               ) === 1
+
                 ? "ITEM"
+
                 : "ITEMS"}
 
             </span>
@@ -701,62 +1124,75 @@ export default function Checkout({
           </div>
 
 
+          {/* PRODUCTS */}
+
           <div className="checkout-products">
 
-            {cart.map((item) => (
+            {cart.map(
+              (item) => (
 
-              <div
-                className="checkout-product"
-                key={item.id}
-              >
+                <div
+                  className="checkout-product"
+                  key={item.id}
+                >
 
-                <div className="checkout-product-image">
+                  <div className="checkout-product-image">
 
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                  />
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                    />
 
-                  <span>
-                    {item.qty}
-                  </span>
+                    <span>
+                      {item.qty}
+                    </span>
 
-                </div>
+                  </div>
 
 
-                <div className="checkout-product-info">
+                  <div className="checkout-product-info">
 
-                  <strong>
-                    {item.name}
-                  </strong>
+                    <strong>
+                      {item.name}
+                    </strong>
 
-                  <small>
-                    {item.category}
 
-                    {item.size
-                      ? ` · ${item.size}`
-                      : ""}
-                  </small>
+                    <small>
 
-                  <b>
-                    {money(
-                      Number(item.price) *
+                      {item.category}
+
+                      {item.size
+                        ? ` · ${item.size}`
+                        : ""}
+
+                    </small>
+
+
+                    <b>
+
+                      {money(
+                        Number(item.price) *
                         Number(item.qty)
-                    )}
-                  </b>
+                      )}
+
+                    </b>
+
+                  </div>
 
                 </div>
 
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 
 
+          {/* CALCULATION */}
+
           <div className="summary-calculation">
 
             <div>
+
               <span>
                 Subtotal
               </span>
@@ -764,6 +1200,7 @@ export default function Checkout({
               <b>
                 {money(subtotal)}
               </b>
+
             </div>
 
 
@@ -774,9 +1211,11 @@ export default function Checkout({
               </span>
 
               <b>
+
                 {shipping
                   ? money(shipping)
                   : "FREE"}
+
               </b>
 
             </div>
@@ -784,11 +1223,14 @@ export default function Checkout({
           </div>
 
 
+          {/* TOTAL */}
+
           <div className="summary-total">
 
             <span>
               TOTAL
             </span>
+
 
             <strong>
               {money(total)}
@@ -796,6 +1238,8 @@ export default function Checkout({
 
           </div>
 
+
+          {/* BENEFITS */}
 
           <div className="checkout-benefits">
 

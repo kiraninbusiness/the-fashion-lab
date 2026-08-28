@@ -135,8 +135,39 @@ function Header({
 }
 
 function Card({ p, add, wish, toggle }) {
+  const [added, setAdded] = useState(false);
+
+  const stock = Number(p.stock) || 0;
+  const oldPrice = Number(p.old_price) || 0;
+  const price = Number(p.price) || 0;
+
+  const discount =
+    oldPrice > price
+      ? Math.round(((oldPrice - price) / oldPrice) * 100)
+      : 0;
+
+  // Consider products with higher IDs as newer products
+  const isNew = Number(p.id) >= 1;
+
+  const handleAdd = () => {
+    if (stock < 1) return;
+
+    add(p);
+    setAdded(true);
+
+    setTimeout(() => {
+      setAdded(false);
+    }, 1500);
+  };
+
   return (
-    <article className="product premium-product">
+    <article
+      className={`product premium-product ${
+        stock < 1 ? "product-sold-out" : ""
+      }`}
+    >
+
+      {/* PRODUCT IMAGE */}
 
       <Link
         to={"/product/" + p.id}
@@ -149,13 +180,40 @@ function Card({ p, add, wish, toggle }) {
           loading="lazy"
         />
 
+        {/* PRODUCT NUMBER */}
+
         <div className="product-number">
           {String(p.id).padStart(2, "0")}
         </div>
 
+        {/* BADGES */}
+
+        <div className="product-badges">
+
+          {discount > 0 && stock > 0 && (
+            <span className="product-sale-badge">
+              -{discount}%
+            </span>
+          )}
+
+          {isNew && stock > 0 && (
+            <span className="product-new-badge">
+              NEW
+            </span>
+          )}
+
+        </div>
+
+        {/* WISHLIST */}
+
         <button
+          type="button"
           className="product-heart"
-          aria-label="Add to wishlist"
+          aria-label={
+            wish.includes(p.id)
+              ? "Remove from wishlist"
+              : "Add to wishlist"
+          }
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -173,52 +231,95 @@ function Card({ p, add, wish, toggle }) {
           />
         </button>
 
+        {/* CONDITION */}
+
         <span className="product-condition">
-          {p.stock < 1
+          {stock < 1
             ? "SOLD OUT"
-            : p.condition}
+            : p.condition || "PRE-LOVED"}
         </span>
 
       </Link>
+
+
+      {/* PRODUCT INFORMATION */}
 
       <div className="info premium-product-info">
 
         <div>
 
           <small>
-            {p.category} · {p.size}
+            {p.category}
+            {p.gender
+              ? ` · ${p.gender}`
+              : ""}
+            {p.size
+              ? ` · ${p.size}`
+              : ""}
           </small>
 
           <h3>
-            {p.name}
+            <Link to={"/product/" + p.id}>
+              {p.name}
+            </Link>
           </h3>
 
         </div>
 
-        <strong>
-          {money(p.price)}
 
-          {p.old_price && (
+        {/* PRICE */}
+
+        <strong className="product-price">
+
+          {money(price)}
+
+          {oldPrice > price && (
             <del>
-              {money(p.old_price)}
+              {money(oldPrice)}
             </del>
           )}
+
         </strong>
 
       </div>
 
-      <button
-        className="add premium-add"
-        onClick={() => p.stock > 0 && add(p)}
-        disabled={p.stock < 1}
-      >
-        {p.stock < 1
-          ? "SOLD OUT"
-          : "ADD TO BAG"}
 
-        {p.stock > 0 && (
-          <ArrowRight size={15} />
+      {/* STOCK MESSAGE */}
+
+      {stock > 0 && stock <= 2 && (
+        <p className="low-stock-message">
+          Only {stock} left
+        </p>
+      )}
+
+
+      {/* ADD TO BAG */}
+
+      <button
+        type="button"
+        className={`add premium-add ${
+          added ? "added-to-bag" : ""
+        }`}
+        onClick={handleAdd}
+        disabled={stock < 1}
+      >
+
+        {stock < 1 ? (
+          <>
+            SOLD OUT
+          </>
+        ) : added ? (
+          <>
+            ADDED TO BAG
+            <span>✓</span>
+          </>
+        ) : (
+          <>
+            ADD TO BAG
+            <ArrowRight size={15} />
+          </>
         )}
+
       </button>
 
     </article>

@@ -47,37 +47,41 @@ router.post('/create', auth, async (req, res) => {
       rows.map((p) => [p.id, p])
     );
 
-    let total = 0;
+   let subtotal = 0;
 
-    for (const item of items) {
-      const productId = Number(item.productId);
-      const quantity = Number(item.quantity);
+for (const item of items) {
+  const productId = Number(item.productId);
+  const quantity = Number(item.quantity);
 
-      const p = byId[productId];
+  const p = byId[productId];
 
-      if (!p) {
-        throw new Error(
-          `Product ${productId} not found`
-        );
-      }
+  if (!p) {
+    throw new Error(
+      `Product ${productId} not found`
+    );
+  }
 
-      if (
-        !Number.isInteger(quantity) ||
-        quantity < 1
-      ) {
-        throw new Error(
-          `Invalid quantity for product ${productId}`
-        );
-      }
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < 1
+  ) {
+    throw new Error(
+      `Invalid quantity for product ${productId}`
+    );
+  }
 
-      if (quantity > Number(p.stock)) {
-        throw new Error(
-          `Only ${p.stock} available for ${p.name}`
-        );
-      }
+  if (quantity > Number(p.stock)) {
+    throw new Error(
+      `Only ${p.stock} available for ${p.name}`
+    );
+  }
 
-      total += Number(p.price) * quantity;
-    }
+  subtotal += Number(p.price) * quantity;
+}
+
+const shipping = subtotal >= 1499 ? 0 : 79;
+
+const total = subtotal + shipping;
 
     const order = (
       await client.query(

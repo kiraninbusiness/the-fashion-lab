@@ -527,13 +527,20 @@ function Shop({ products, ...props }) {
   const [gender, setGender] = useState("All");
   const [size, setSize] = useState("All");
   const [price, setPrice] = useState("All");
+  const [availability, setAvailability] = useState("All");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("featured");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Read search from URL
+  /* -----------------------------
+     READ SEARCH FROM URL
+  ----------------------------- */
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
     const search = params.get("search");
 
     if (search) {
@@ -541,7 +548,10 @@ function Shop({ products, ...props }) {
     }
   }, []);
 
-  // Available filter values from products
+  /* -----------------------------
+     FILTER OPTIONS
+  ----------------------------- */
+
   const categories = [
     "All",
     ...new Set(
@@ -569,28 +579,54 @@ function Shop({ products, ...props }) {
     )
   ];
 
+  /* -----------------------------
+     FILTER PRODUCTS
+  ----------------------------- */
+
   const filtered = products.filter((p) => {
+
     const matchesCategory =
-      cat === "All" || p.category === cat;
+      cat === "All" ||
+      p.category === cat;
 
     const matchesGender =
-      gender === "All" || p.gender === gender;
+      gender === "All" ||
+      p.gender === gender;
 
     const matchesSize =
-      size === "All" || p.size === size;
+      size === "All" ||
+      p.size === size;
 
-    const matchesPrice =
-      price === "All" ||
-      (price === "under-500" &&
-        Number(p.price) < 500) ||
-      (price === "500-1000" &&
+    const matchesAvailability =
+      availability === "All" ||
+      (availability === "in-stock" &&
+        Number(p.stock) > 0) ||
+      (availability === "sold-out" &&
+        Number(p.stock) < 1);
+
+    let matchesPrice = true;
+
+    if (price === "under-500") {
+      matchesPrice =
+        Number(p.price) < 500;
+    }
+
+    if (price === "500-1000") {
+      matchesPrice =
         Number(p.price) >= 500 &&
-        Number(p.price) <= 1000) ||
-      (price === "1000-1500" &&
+        Number(p.price) <= 1000;
+    }
+
+    if (price === "1000-1500") {
+      matchesPrice =
         Number(p.price) > 1000 &&
-        Number(p.price) <= 1500) ||
-      (price === "above-1500" &&
-        Number(p.price) > 1500);
+        Number(p.price) <= 1500;
+    }
+
+    if (price === "above-1500") {
+      matchesPrice =
+        Number(p.price) > 1500;
+    }
 
     const searchText = `
       ${p.name}
@@ -602,38 +638,84 @@ function Shop({ products, ...props }) {
     `.toLowerCase();
 
     const matchesSearch =
-      searchText.includes(q.toLowerCase().trim());
+      searchText.includes(
+        q.toLowerCase().trim()
+      );
 
     return (
       matchesCategory &&
       matchesGender &&
       matchesSize &&
+      matchesAvailability &&
       matchesPrice &&
       matchesSearch
     );
   });
 
-  const list = [...filtered].sort((a, b) => {
-    if (sort === "price-low") {
-      return Number(a.price) - Number(b.price);
-    }
+  /* -----------------------------
+     SORT PRODUCTS
+  ----------------------------- */
 
-    if (sort === "price-high") {
-      return Number(b.price) - Number(a.price);
-    }
+  const list = [...filtered].sort(
+    (a, b) => {
 
-    if (sort === "newest") {
-      return Number(b.id) - Number(a.id);
-    }
+      if (sort === "price-low") {
+        return (
+          Number(a.price) -
+          Number(b.price)
+        );
+      }
 
-    return 0;
-  });
+      if (sort === "price-high") {
+        return (
+          Number(b.price) -
+          Number(a.price)
+        );
+      }
+
+      if (sort === "newest") {
+        return (
+          Number(b.id) -
+          Number(a.id)
+        );
+      }
+
+      if (sort === "discount") {
+
+        const discountA =
+          a.old_price
+            ? ((Number(a.old_price) -
+                Number(a.price)) /
+                Number(a.old_price)) *
+              100
+            : 0;
+
+        const discountB =
+          b.old_price
+            ? ((Number(b.old_price) -
+                Number(b.price)) /
+                Number(b.old_price)) *
+              100
+            : 0;
+
+        return discountB - discountA;
+      }
+
+      return 0;
+    }
+  );
+
+  /* -----------------------------
+     CLEAR FILTERS
+  ----------------------------- */
 
   const clearFilters = () => {
+
     setCat("All");
     setGender("All");
     setSize("All");
     setPrice("All");
+    setAvailability("All");
     setQ("");
     setSort("featured");
 
@@ -649,17 +731,21 @@ function Shop({ products, ...props }) {
     gender !== "All" ||
     size !== "All" ||
     price !== "All" ||
+    availability !== "All" ||
     q !== "" ||
     sort !== "featured";
 
   return (
     <main className="page shop-page">
 
-      {/* SHOP HEADER */}
+      {/* =================================
+          SHOP HEADER
+      ================================= */}
 
       <div className="shop-heading">
 
         <div>
+
           <p className="eyebrow">
             THE CURRENT DROP
           </p>
@@ -674,18 +760,23 @@ function Shop({ products, ...props }) {
               ? "piece"
               : "pieces"}
           </p>
+
         </div>
 
       </div>
 
 
-      {/* MOBILE FILTER BUTTON */}
+      {/* =================================
+          MOBILE FILTER BUTTON
+      ================================= */}
 
       <button
         type="button"
         className="mobile-filter-button"
         onClick={() =>
-          setFilterOpen(!filterOpen)
+          setFilterOpen(
+            !filterOpen
+          )
         }
       >
         {filterOpen
@@ -694,7 +785,9 @@ function Shop({ products, ...props }) {
       </button>
 
 
-      {/* SHOP CONTROLS */}
+      {/* =================================
+          FILTER AREA
+      ================================= */}
 
       <div
         className={
@@ -715,18 +808,22 @@ function Shop({ products, ...props }) {
           <div className="filters">
 
             {categories.map((c) => (
+
               <button
                 type="button"
+                key={c}
                 className={
                   cat === c
                     ? "active"
                     : ""
                 }
-                onClick={() => setCat(c)}
-                key={c}
+                onClick={() =>
+                  setCat(c)
+                }
               >
                 {c}
               </button>
+
             ))}
 
           </div>
@@ -739,14 +836,16 @@ function Shop({ products, ...props }) {
         <div className="shop-filter-group">
 
           <span className="filter-label">
-            GENDER
+            SHOP FOR
           </span>
 
           <div className="filters">
 
             {genders.map((g) => (
+
               <button
                 type="button"
+                key={g}
                 className={
                   gender === g
                     ? "active"
@@ -755,10 +854,10 @@ function Shop({ products, ...props }) {
                 onClick={() =>
                   setGender(g)
                 }
-                key={g}
               >
                 {g}
               </button>
+
             ))}
 
           </div>
@@ -777,8 +876,10 @@ function Shop({ products, ...props }) {
           <div className="filters">
 
             {sizes.map((s) => (
+
               <button
                 type="button"
+                key={s}
                 className={
                   size === s
                     ? "active"
@@ -787,10 +888,10 @@ function Shop({ products, ...props }) {
                 onClick={() =>
                   setSize(s)
                 }
-                key={s}
               >
                 {s}
               </button>
+
             ))}
 
           </div>
@@ -883,6 +984,67 @@ function Shop({ products, ...props }) {
         </div>
 
 
+        {/* AVAILABILITY */}
+
+        <div className="shop-filter-group">
+
+          <span className="filter-label">
+            AVAILABILITY
+          </span>
+
+          <div className="filters">
+
+            <button
+              type="button"
+              className={
+                availability === "All"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setAvailability("All")
+              }
+            >
+              ALL
+            </button>
+
+            <button
+              type="button"
+              className={
+                availability === "in-stock"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setAvailability(
+                  "in-stock"
+                )
+              }
+            >
+              IN STOCK
+            </button>
+
+            <button
+              type="button"
+              className={
+                availability === "sold-out"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setAvailability(
+                  "sold-out"
+                )
+              }
+            >
+              SOLD OUT
+            </button>
+
+          </div>
+
+        </div>
+
+
         {/* SEARCH + SORT */}
 
         <div className="shop-controls">
@@ -920,6 +1082,10 @@ function Shop({ products, ...props }) {
               Price: High to Low
             </option>
 
+            <option value="discount">
+              Biggest Discount
+            </option>
+
           </select>
 
         </div>
@@ -927,13 +1093,19 @@ function Shop({ products, ...props }) {
       </div>
 
 
-      {/* ACTIVE FILTERS */}
+      {/* =================================
+          ACTIVE FILTER BAR
+      ================================= */}
 
       {hasFilters && (
+
         <div className="active-filter-bar">
 
           <span>
-            {list.length} RESULTS
+            {list.length}{" "}
+            {list.length === 1
+              ? "RESULT"
+              : "RESULTS"}
           </span>
 
           <button
@@ -944,26 +1116,35 @@ function Shop({ products, ...props }) {
           </button>
 
         </div>
+
       )}
 
 
-      {/* PRODUCTS */}
+      {/* =================================
+          PRODUCT GRID
+      ================================= */}
 
       {list.length > 0 ? (
 
         <div className="grid">
 
           {list.map((p) => (
+
             <Card
               key={p.id}
               p={p}
               {...props}
             />
+
           ))}
 
         </div>
 
       ) : (
+
+        /* =================================
+           EMPTY STATE
+        ================================= */
 
         <section className="shop-empty">
 
@@ -978,8 +1159,9 @@ function Shop({ products, ...props }) {
           </h2>
 
           <p>
-            Try changing your filters or
-            searching for another piece.
+            Try changing your filters
+            or searching for another
+            piece.
           </p>
 
           <button

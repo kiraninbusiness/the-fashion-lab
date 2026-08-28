@@ -6,6 +6,7 @@ import { auth, admin } from '../middleware/auth.js';
 
 const router = Router();
 
+
 /*
   CREATE ORDER
 */
@@ -28,11 +29,32 @@ router.post('/create', auth, async (req, res) => {
     });
   }
 
+  /*
+    ONLINE PAYMENT REQUIRES RAZORPAY
+  */
+  if (
+    payment_method === 'online' &&
+    (
+      !process.env.RAZORPAY_KEY_ID ||
+      !process.env.RAZORPAY_KEY_SECRET
+    )
+  ) {
+    return res.status(503).json({
+      message:
+        'Online payment is currently unavailable. Please choose Cash on Delivery.'
+    });
+  }
+
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
+    /*
+      GET PRODUCTS AND LOCK THEIR ROWS
+      This prevents stock problems when multiple
+      customers try to buy the same product.
+    */
     const ids = items.map((x) => Number(x.productId));
 
     const { rows } = await client.query(
@@ -47,42 +69,57 @@ router.post('/create', auth, async (req, res) => {
       rows.map((p) => [p.id, p])
     );
 
-   let subtotal = 0;
+    /*
+      CALCULATE SUBTOTAL
+    */
+    let subtotal = 0;
 
-for (const item of items) {
-  const productId = Number(item.productId);
-  const quantity = Number(item.quantity);
+    for (const item of items) {
+      const productId = Number(item.productId);
+      const quantity = Number(item.quantity);
 
-  const p = byId[productId];
+      const p = byId[productId];
 
-  if (!p) {
-    throw new Error(
-      `Product ${productId} not found`
-    );
-  }
+      if (!p) {
+        throw new Error(
+          `Product ${productId} not found`
+        );
+      }
 
-  if (
-    !Number.isInteger(quantity) ||
-    quantity < 1
-  ) {
-    throw new Error(
-      `Invalid quantity for product ${productId}`
-    );
-  }
+      if (
+        !Number.isInteger(quantity) ||
+        quantity < 1
+      ) {
+        throw new Error(
+          `Invalid quantity for product ${productId}`
+        );
+      }
 
-  if (quantity > Number(p.stock)) {
-    throw new Error(
-      `Only ${p.stock} available for ${p.name}`
-    );
-  }
+      if (quantity > Number(p.stock)) {
+        throw new Error(
+          `Only ${p.stock} available for ${p.name}`
+        );
+      }
 
-  subtotal += Number(p.price) * quantity;
-}
+      subtotal +=
+        Number(p.price) * quantity;
+    }
 
-const shipping = subtotal >= 1499 ? 0 : 79;
+    /*
+      SHIPPING
+      Free above ₹1,499
+      Otherwise ₹79
+    */
+    const shippingCharge =
+      subtotal >= 1499 ? 0 : 79;
 
-const total = subtotal + shipping;
+    const total =
+      subtotal + shippingCharge;
 
+
+    /*
+      CREATE DATABASE ORDER
+    */
     const order = (
       await client.query(
         `INSERT INTO orders(
@@ -106,9 +143,17 @@ const total = subtotal + shipping;
       )
     ).rows[0];
 
+
+    /*
+      CREATE ORDER ITEMS
+      AND RESERVE STOCK
+    */
     for (const item of items) {
-      const productId = Number(item.productId);
-      const quantity = Number(item.quantity);
+      const productId =
+        Number(item.productId);
+
+      const quantity =
+        Number(item.quantity);
 
       const p = byId[productId];
 
@@ -130,49 +175,74 @@ const total = subtotal + shipping;
         ]
       );
 
+      /*
+        Reserve stock immediately.
+
+        If online payment is cancelled or fails,
+        the stock will be restored by the
+        payment-cancel endpoint below.
+      */
       await client.query(
         `UPDATE products
          SET stock = stock - $1
          WHERE id = $2`,
-        [quantity, p.id]
+        [
+          quantity,
+          p.id
+        ]
       );
     }
 
+
     /*
-      RAZORPAY
+      RAZORPAY ORDER
     */
-    if (
-      process.env.RAZORPAY_KEY_ID &&
-      process.env.RAZORPAY_KEY_SECRET
-    ) {
+    if (payment_method === 'online') {
+
       const rzp = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET
+        key_id:
+          process.env.RAZORPAY_KEY_ID,
+
+        key_secret:
+          process.env.RAZORPAY_KEY_SECRET
       });
 
-      const rOrder = await rzp.orders.create({
-        amount: total * 100,
-        currency: 'INR',
-        receipt: `order_${order.id}`
-      });
+      const rOrder =
+        await rzp.orders.create({
+          amount:
+            Math.round(total * 100),
+
+          currency: 'INR',
+
+          receipt:
+            `order_${order.id}`
+        });
+
 
       await client.query(
         `UPDATE orders
          SET razorpay_order_id = $1
          WHERE id = $2`,
-        [rOrder.id, order.id]
+        [
+          rOrder.id,
+          order.id
+        ]
       );
 
-      order.razorpay_order_id = rOrder.id;
+      order.razorpay_order_id =
+        rOrder.id;
     }
 
+
     await client.query('COMMIT');
+
 
     res.status(201).json({
       order
     });
 
   } catch (e) {
+
     await client.query('ROLLBACK');
 
     console.error(
@@ -194,81 +264,62 @@ const total = subtotal + shipping;
 
 /*
   CUSTOMER — MY ORDERS
-  Returns orders + purchased items
 */
 router.get('/mine', auth, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT
-         o.*,
-         COALESCE(
-           json_agg(
-             json_build_object(
-               'product_id', oi.product_id,
-               'name', oi.name,
-               'price', oi.price,
-               'quantity', oi.quantity,
-               'item_total',
-                 (oi.price * oi.quantity)
-             )
-             ORDER BY oi.id
-           ) FILTER (
-             WHERE oi.id IS NOT NULL
-           ),
-           '[]'
-         ) AS items
-       FROM orders o
-       LEFT JOIN order_items oi
-         ON oi.order_id = o.id
-       WHERE o.user_id = $1
-       GROUP BY o.id
-       ORDER BY o.created_at DESC`,
+
+  const { rows } =
+    await pool.query(
+      `SELECT *
+       FROM orders
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
       [req.user.id]
     );
 
-    res.json(rows);
-
-  } catch (e) {
-    console.error(
-      'MY ORDERS ERROR:',
-      e.message
-    );
-
-    res.status(500).json({
-      message: 'Could not load orders'
-    });
-  }
+  res.json(rows);
 });
 
 
 /*
   CUSTOMER — CANCEL OWN ORDER
   AND RESTORE PRODUCT STOCK
+
+  This is for normal pending COD orders.
 */
 router.patch(
   '/:id/cancel',
   auth,
   async (req, res) => {
-    const client = await pool.connect();
+
+    const client =
+      await pool.connect();
 
     try {
+
       await client.query('BEGIN');
 
-      const orderResult = await client.query(
-        `SELECT *
-         FROM orders
-         WHERE id = $1
-           AND user_id = $2
-           AND status = 'pending'
-         FOR UPDATE`,
-        [
-          req.params.id,
-          req.user.id
-        ]
-      );
+
+      const orderResult =
+        await client.query(
+          `SELECT *
+           FROM orders
+           WHERE id = $1
+             AND user_id = $2
+             AND status = 'pending'
+             AND payment_method = 'cod'
+           FOR UPDATE`,
+          [
+            req.params.id,
+            req.user.id
+          ]
+        );
+
 
       if (!orderResult.rows.length) {
-        await client.query('ROLLBACK');
+
+        await client.query(
+          'ROLLBACK'
+        );
 
         return res.status(400).json({
           message:
@@ -276,19 +327,30 @@ router.patch(
         });
       }
 
-      const order = orderResult.rows[0];
 
-      const itemsResult = await client.query(
-        `SELECT product_id, quantity
-         FROM order_items
-         WHERE order_id = $1`,
-        [order.id]
-      );
+      const order =
+        orderResult.rows[0];
+
+
+      const itemsResult =
+        await client.query(
+          `SELECT
+             product_id,
+             quantity
+           FROM order_items
+           WHERE order_id = $1`,
+          [order.id]
+        );
+
 
       /*
         RESTORE STOCK
       */
-      for (const item of itemsResult.rows) {
+      for (
+        const item
+        of itemsResult.rows
+      ) {
+
         await client.query(
           `UPDATE products
            SET stock = stock + $1
@@ -300,26 +362,38 @@ router.patch(
         );
       }
 
+
       /*
         CANCEL ORDER
       */
-      const updatedResult = await client.query(
-        `UPDATE orders
-         SET status = 'cancelled'
-         WHERE id = $1
-         RETURNING *`,
-        [order.id]
+      const updatedResult =
+        await client.query(
+          `UPDATE orders
+           SET status = 'cancelled'
+           WHERE id = $1
+           RETURNING *`,
+          [order.id]
+        );
+
+
+      await client.query(
+        'COMMIT'
       );
 
-      await client.query('COMMIT');
 
       res.json({
-        message: 'Order cancelled successfully',
-        order: updatedResult.rows[0]
+        message:
+          'Order cancelled successfully',
+
+        order:
+          updatedResult.rows[0]
       });
 
     } catch (e) {
-      await client.query('ROLLBACK');
+
+      await client.query(
+        'ROLLBACK'
+      );
 
       console.error(
         'CANCEL ORDER ERROR:',
@@ -339,141 +413,182 @@ router.patch(
 
 
 /*
-  ADMIN — ALL ORDERS
-  Returns:
-  - Customer information
-  - Shipping information
-  - Payment information
-  - Order status
-  - Purchased products
-  - Quantity
-  - Product price
-  - Item total
+  ONLINE PAYMENT — CANCEL / FAILED
+  RESTORE PRODUCT STOCK
+
+  This endpoint is intentionally separate
+  from the normal customer cancellation route.
+
+  It can only cancel:
+  - the customer's own order
+  - online payment orders
+  - unpaid orders
+  - orders that are not already cancelled
+
+  Because the row is locked inside a transaction,
+  calling this endpoint twice will NOT restore
+  the stock twice.
 */
-router.get('/', auth, admin, async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT
-         o.*,
-
-         u.name AS customer_name,
-         u.email AS customer_email,
-
-         COALESCE(
-           json_agg(
-             json_build_object(
-               'product_id', oi.product_id,
-               'name', oi.name,
-               'price', oi.price,
-               'quantity', oi.quantity,
-               'item_total',
-                 (oi.price * oi.quantity)
-             )
-             ORDER BY oi.id
-           ) FILTER (
-             WHERE oi.id IS NOT NULL
-           ),
-           '[]'
-         ) AS items
-
-       FROM orders o
-
-       LEFT JOIN users u
-         ON u.id = o.user_id
-
-       LEFT JOIN order_items oi
-         ON oi.order_id = o.id
-
-       GROUP BY
-         o.id,
-         u.id
-
-       ORDER BY o.created_at DESC`
-    );
-
-    res.json(rows);
-
-  } catch (e) {
-    console.error(
-      'ADMIN ORDERS ERROR:',
-      e.message
-    );
-
-    res.status(500).json({
-      message: 'Could not load orders'
-    });
-  }
-});
-
-
-/*
-  ADMIN — SINGLE ORDER DETAILS
-*/
-router.get(
-  '/:id',
+router.patch(
+  '/:id/payment-cancel',
   auth,
-  admin,
   async (req, res) => {
+
+    const client =
+      await pool.connect();
+
     try {
-      const { rows } = await pool.query(
-        `SELECT
-           o.*,
 
-           u.name AS customer_name,
-           u.email AS customer_email,
-
-           COALESCE(
-             json_agg(
-               json_build_object(
-                 'product_id', oi.product_id,
-                 'name', oi.name,
-                 'price', oi.price,
-                 'quantity', oi.quantity,
-                 'item_total',
-                   (oi.price * oi.quantity)
-               )
-               ORDER BY oi.id
-             ) FILTER (
-               WHERE oi.id IS NOT NULL
-             ),
-             '[]'
-           ) AS items
-
-         FROM orders o
-
-         LEFT JOIN users u
-           ON u.id = o.user_id
-
-         LEFT JOIN order_items oi
-           ON oi.order_id = o.id
-
-         WHERE o.id = $1
-
-         GROUP BY
-           o.id,
-           u.id`,
-        [req.params.id]
+      await client.query(
+        'BEGIN'
       );
 
-      if (!rows.length) {
-        return res.status(404).json({
-          message: 'Order not found'
+
+      const orderResult =
+        await client.query(
+          `SELECT *
+           FROM orders
+           WHERE id = $1
+             AND user_id = $2
+             AND payment_method = 'online'
+             AND payment_status <> 'paid'
+             AND status <> 'cancelled'
+           FOR UPDATE`,
+          [
+            req.params.id,
+            req.user.id
+          ]
+        );
+
+
+      /*
+        If no order was found, it may already
+        have been cancelled.
+
+        This also prevents double stock restoration.
+      */
+      if (!orderResult.rows.length) {
+
+        await client.query(
+          'ROLLBACK'
+        );
+
+        return res.json({
+          message:
+            'Order already cancelled or payment completed.'
         });
       }
 
-      res.json(rows[0]);
+
+      const order =
+        orderResult.rows[0];
+
+
+      /*
+        GET ORDER ITEMS
+      */
+      const itemsResult =
+        await client.query(
+          `SELECT
+             product_id,
+             quantity
+           FROM order_items
+           WHERE order_id = $1`,
+          [order.id]
+        );
+
+
+      /*
+        RESTORE STOCK
+      */
+      for (
+        const item
+        of itemsResult.rows
+      ) {
+
+        await client.query(
+          `UPDATE products
+           SET stock = stock + $1
+           WHERE id = $2`,
+          [
+            Number(item.quantity),
+            Number(item.product_id)
+          ]
+        );
+      }
+
+
+      /*
+        CANCEL ORDER
+      */
+      const updatedResult =
+        await client.query(
+          `UPDATE orders
+           SET status = 'cancelled'
+           WHERE id = $1
+           RETURNING *`,
+          [order.id]
+        );
+
+
+      await client.query(
+        'COMMIT'
+      );
+
+
+      res.json({
+        message:
+          'Unpaid order cancelled successfully',
+
+        order:
+          updatedResult.rows[0]
+      });
 
     } catch (e) {
+
+      await client.query(
+        'ROLLBACK'
+      );
+
       console.error(
-        'ORDER DETAILS ERROR:',
+        'PAYMENT CANCEL ERROR:',
         e.message
       );
 
       res.status(500).json({
         message:
-          'Could not load order details'
+          'Could not cancel unpaid order'
       });
+
+    } finally {
+      client.release();
     }
+  }
+);
+
+
+/*
+  ADMIN — ALL ORDERS
+*/
+router.get(
+  '/',
+  auth,
+  admin,
+  async (req, res) => {
+
+    const { rows } =
+      await pool.query(
+        `SELECT
+           o.*,
+           u.name,
+           u.email
+         FROM orders o
+         JOIN users u
+           ON u.id = o.user_id
+         ORDER BY o.created_at DESC`
+      );
+
+    res.json(rows);
   }
 );
 
@@ -486,81 +601,48 @@ router.patch(
   auth,
   admin,
   async (req, res) => {
+
     const {
       status,
       payment_status
     } = req.body;
 
-    const allowedStatuses = [
-      'pending',
-      'processing',
-      'shipped',
-      'delivered',
-      'cancelled'
-    ];
 
-    const allowedPaymentStatuses = [
-      'pending',
-      'paid',
-      'failed',
-      'refunded'
-    ];
+    const { rows } =
+      await pool.query(
+        `UPDATE orders
+         SET
+           status =
+             COALESCE($1, status),
 
-    if (
-      status !== undefined &&
-      !allowedStatuses.includes(status)
-    ) {
-      return res.status(400).json({
-        message: 'Invalid order status'
-      });
-    }
+           payment_status =
+             COALESCE(
+               $2,
+               payment_status
+             )
 
-    if (
-      payment_status !== undefined &&
-      !allowedPaymentStatuses.includes(
-        payment_status
-      )
-    ) {
-      return res.status(400).json({
-        message: 'Invalid payment status'
-      });
-    }
+         WHERE id = $3
 
-    try {
-      const { rows } =
-        await pool.query(
-          `UPDATE orders
-           SET
-             status = COALESCE($1, status),
-             payment_status = COALESCE($2, payment_status)
-           WHERE id = $3
-           RETURNING *`,
-          [
-            status,
-            payment_status,
-            req.params.id
-          ]
-        );
-
-      if (!rows.length) {
-        return res.status(404).json({
-          message: 'Order not found'
-        });
-      }
-
-      res.json(rows[0]);
-
-    } catch (e) {
-      console.error(
-        'UPDATE ORDER STATUS ERROR:',
-        e.message
+         RETURNING *`,
+        [
+          status,
+          payment_status,
+          req.params.id
+        ]
       );
 
-      res.status(500).json({
+
+    if (!rows.length) {
+      return res.status(404).json({
         message:
-          'Could not update order status'
+          'Order not found'
       });
     }
+
+
+    res.json(
+      rows[0]
+    );
   }
 );
 
@@ -580,6 +662,7 @@ router.post(
       razorpay_signature
     } = req.body;
 
+
     if (
       !process.env.RAZORPAY_KEY_SECRET
     ) {
@@ -589,6 +672,66 @@ router.post(
       });
     }
 
+
+    /*
+      Get the customer's order
+    */
+    const orderResult =
+      await pool.query(
+        `SELECT *
+         FROM orders
+         WHERE id = $1
+           AND user_id = $2`,
+        [
+          orderId,
+          req.user.id
+        ]
+      );
+
+
+    if (!orderResult.rows.length) {
+      return res.status(404).json({
+        message:
+          'Order not found'
+      });
+    }
+
+
+    const order =
+      orderResult.rows[0];
+
+
+    /*
+      Make sure the Razorpay order matches
+      our database order.
+    */
+    if (
+      order.razorpay_order_id !==
+      razorpay_order_id
+    ) {
+      return res.status(400).json({
+        message:
+          'Razorpay order mismatch'
+      });
+    }
+
+
+    /*
+      If payment was already verified,
+      simply return the order.
+    */
+    if (
+      order.payment_status === 'paid'
+    ) {
+      return res.json(
+        order
+      );
+    }
+
+
+    /*
+      CREATE EXPECTED SIGNATURE
+    */
     const expected =
       crypto
         .createHmac(
@@ -600,15 +743,25 @@ router.post(
         )
         .digest('hex');
 
+
+    /*
+      VERIFY SIGNATURE
+    */
     if (
-      expected !== razorpay_signature
+      expected !==
+      razorpay_signature
     ) {
+
       return res.status(400).json({
         message:
           'Invalid payment signature'
       });
     }
 
+
+    /*
+      MARK PAYMENT AS PAID
+    */
     const { rows } =
       await pool.query(
         `UPDATE orders
@@ -617,6 +770,7 @@ router.post(
            status = 'processing'
          WHERE id = $1
            AND user_id = $2
+           AND payment_status <> 'paid'
          RETURNING *`,
         [
           orderId,
@@ -624,13 +778,26 @@ router.post(
         ]
       );
 
+
     if (!rows.length) {
-      return res.status(404).json({
-        message: 'Order not found'
-      });
+
+      const latest =
+        await pool.query(
+          `SELECT *
+           FROM orders
+           WHERE id = $1`,
+          [orderId]
+        );
+
+      return res.json(
+        latest.rows[0]
+      );
     }
 
-    res.json(rows[0]);
+
+    res.json(
+      rows[0]
+    );
   }
 );
 

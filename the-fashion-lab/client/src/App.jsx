@@ -1671,16 +1671,17 @@ export default function App() {
         />
 
         <Route
-          path="/product/:id"
-          element={
-            <ProductDetails
-              products={products}
-              add={add}
-              wishlist={wish}
-              toggle={toggle}
-            />
-          }
-        />
+  path="/product/:id"
+  element={
+    <ProductDetails
+      products={products}
+      add={add}
+      wishlist={wish}
+      toggle={toggle}
+      setCart={setCart}
+    />
+  }
+/>
 
         <Route
           path="/checkout"

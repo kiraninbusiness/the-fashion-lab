@@ -442,14 +442,32 @@ export default function Admin({ user }) {
               </div>
 
               <select
-                value={o.status}
-                onChange={(e) =>
-                  status(
-                    o.id,
-                    e.target.value
-                  )
-                }
-              >
+  value={o.status}
+  onChange={(e) =>
+    status(o.id, e.target.value)
+  }
+  disabled={o.status === "cancelled"}
+>
+  <option value="pending">
+    pending
+  </option>
+
+  <option value="processing">
+    processing
+  </option>
+
+  <option value="shipped">
+    shipped
+  </option>
+
+  <option value="delivered">
+    delivered
+  </option>
+
+  <option value="cancelled">
+    cancelled
+  </option>
+</select>
                 <option value="pending">
                   pending
                 </option>

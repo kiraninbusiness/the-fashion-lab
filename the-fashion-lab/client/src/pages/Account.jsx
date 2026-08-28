@@ -45,8 +45,10 @@ function OrderTracking({ status }) {
       <div className="order-tracking cancelled-tracking">
         <div className="tracking-step active cancelled">
           <XCircle size={18} />
+
           <span>
             <strong>Order Cancelled</strong>
+
             <small>
               This order has been cancelled.
             </small>
@@ -86,9 +88,10 @@ function OrderTracking({ status }) {
             <span>
               <strong>{step.label}</strong>
 
-              {completed && index === currentIndex && (
-                <small>Current status</small>
-              )}
+              {completed &&
+                index === currentIndex && (
+                  <small>Current status</small>
+                )}
             </span>
 
             {index < steps.length - 1 && (
@@ -112,9 +115,15 @@ function OrderTracking({ status }) {
 export default function Account({ user, setUser }) {
 
   const [mode, setMode] = useState("login");
-  const [forgotEmail, setForgotEmail] = useState("");
-const [forgotMessage, setForgotMessage] = useState("");
-const [forgotLoading, setForgotLoading] = useState(false);
+
+  const [forgotEmail, setForgotEmail] =
+    useState("");
+
+  const [forgotMessage, setForgotMessage] =
+    useState("");
+
+  const [forgotLoading, setForgotLoading] =
+    useState(false);
 
   const [f, setF] = useState({
     name: "",
@@ -123,67 +132,123 @@ const [forgotLoading, setForgotLoading] = useState(false);
   });
 
   const [err, setErr] = useState("");
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [cancelId, setCancelId] = useState(null);
+
+  const [orders, setOrders] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [cancelId, setCancelId] =
+    useState(null);
+
+
+  // =====================================================
+  // LOAD ORDERS
+  // =====================================================
 
   async function loadOrders() {
     try {
+
       const data = await api("/orders/mine");
+
       setOrders(data);
+
     } catch (e) {
+
       console.error(e);
+
       setOrders([]);
+
     }
   }
 
+
   useEffect(() => {
+
     if (user) {
       loadOrders();
     }
+
   }, [user]);
 
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
   function logout() {
-    localStorage.removeItem("thrift_token");
-    localStorage.removeItem("thrift_user");
+
+    localStorage.removeItem(
+      "thrift_token"
+    );
+
+    localStorage.removeItem(
+      "thrift_user"
+    );
+
     setUser(null);
   }
 
+
+  // =====================================================
+  // CANCEL ORDER
+  // =====================================================
+
   async function cancelOrder(id) {
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to cancel this order?"
+      );
 
     if (!confirmed) return;
 
     setCancelId(id);
 
     try {
-      await api(`/orders/${id}/cancel`, {
-        method: "PATCH"
-      });
+
+      await api(
+        `/orders/${id}/cancel`,
+        {
+          method: "PATCH"
+        }
+      );
 
       await loadOrders();
 
-      alert("Order cancelled successfully.");
+      alert(
+        "Order cancelled successfully."
+      );
 
     } catch (e) {
+
       alert(
         e.message ||
         "Could not cancel order."
       );
+
     } finally {
+
       setCancelId(null);
+
     }
   }
 
+
+  // =====================================================
+  // LOGGED-IN CUSTOMER / ADMIN
+  // =====================================================
+
   if (user) {
+
     return (
       <main className="account-premium">
 
         <section className="account-hero">
 
           <div>
+
             <p className="eyebrow">
               THE FASHION LAB
             </p>
@@ -197,6 +262,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
             <p className="account-email">
               {user.email}
             </p>
+
           </div>
 
           <div className="account-profile-icon">
@@ -205,12 +271,15 @@ const [forgotLoading, setForgotLoading] = useState(false);
 
         </section>
 
+
         <section className="account-toolbar">
 
           <div className="account-welcome">
+
             <Package size={18} />
 
             <span>
+
               <strong>
                 Your wardrobe story
               </strong>
@@ -218,12 +287,16 @@ const [forgotLoading, setForgotLoading] = useState(false);
               <small>
                 Manage your orders and account.
               </small>
+
             </span>
+
           </div>
+
 
           <div className="account-actions">
 
             {user.role === "admin" && (
+
               <Link
                 className="account-admin-button"
                 to="/admin"
@@ -231,6 +304,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
                 ADMIN DASHBOARD
                 <ArrowRight size={15} />
               </Link>
+
             )}
 
             <button
@@ -245,11 +319,13 @@ const [forgotLoading, setForgotLoading] = useState(false);
 
         </section>
 
+
         <section className="account-orders">
 
           <div className="orders-heading">
 
             <div>
+
               <p className="eyebrow">
                 YOUR HISTORY
               </p>
@@ -257,6 +333,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
               <h2>
                 Your orders
               </h2>
+
             </div>
 
             <span>
@@ -267,6 +344,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
             </span>
 
           </div>
+
 
           {!orders.length ? (
 
@@ -345,6 +423,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
 
                   </div>
 
+
                   <div className="order-status">
 
                     <span
@@ -355,9 +434,12 @@ const [forgotLoading, setForgotLoading] = useState(false);
 
                   </div>
 
+
                   <div className="order-total">
 
-                    <span>TOTAL</span>
+                    <span>
+                      TOTAL
+                    </span>
 
                     <strong>
                       {money(o.total)}
@@ -365,18 +447,19 @@ const [forgotLoading, setForgotLoading] = useState(false);
 
                   </div>
 
-                  {/* TRACKING */}
 
                   <OrderTracking
                     status={o.status}
                   />
 
-                  {/* CANCEL */}
 
                   {o.status === "pending" && (
+
                     <button
                       className="cancel-order-button"
-                      disabled={cancelId === o.id}
+                      disabled={
+                        cancelId === o.id
+                      }
                       onClick={() =>
                         cancelOrder(o.id)
                       }
@@ -385,6 +468,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
                         ? "CANCELLING..."
                         : "CANCEL ORDER"}
                     </button>
+
                   )}
 
                 </article>
@@ -396,6 +480,7 @@ const [forgotLoading, setForgotLoading] = useState(false);
           )}
 
         </section>
+
 
         <section className="account-footer-message">
 
@@ -418,32 +503,59 @@ const [forgotLoading, setForgotLoading] = useState(false);
       </main>
     );
   }
-async function forgotPassword(e) {
-  e.preventDefault();
 
-  setErr("");
-  setForgotMessage("");
-  setForgotLoading(true);
 
-  try {
-    const data = await api("/auth/forgot-password", {
-      method: "POST",
-      body: JSON.stringify({
-        email: forgotEmail
-      })
-    });
+  // =====================================================
+  // FORGOT PASSWORD
+  // =====================================================
 
-    setForgotMessage(data.message);
+  async function forgotPassword(e) {
 
-  } catch (e) {
-    setErr(e.message || "Could not process request.");
-
-  } finally {
-    setForgotLoading(false);
-  }
-}
-  async function submit(e) {
     e.preventDefault();
+
+    setErr("");
+    setForgotMessage("");
+    setForgotLoading(true);
+
+    try {
+
+      const data = await api(
+        "/auth/forgot-password",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: forgotEmail
+          })
+        }
+      );
+
+      setForgotMessage(
+        data.message
+      );
+
+    } catch (e) {
+
+      setErr(
+        e.message ||
+        "Could not process request."
+      );
+
+    } finally {
+
+      setForgotLoading(false);
+
+    }
+  }
+
+
+  // =====================================================
+  // LOGIN / REGISTER
+  // =====================================================
+
+  async function submit(e) {
+
+    e.preventDefault();
+
     setErr("");
     setLoading(true);
 
@@ -470,21 +582,40 @@ async function forgotPassword(e) {
       setUser(d.user);
 
     } catch (e) {
+
       setErr(e.message);
 
     } finally {
+
       setLoading(false);
+
     }
   }
+
+
+  // =====================================================
+  // AUTH PAGE
+  // =====================================================
 
   return (
     <main className="account-auth">
 
       <div className="auth-decoration">
-        <span>THE</span>
-        <em>FASHION</em>
-        <span>LAB</span>
+
+        <span>
+          THE
+        </span>
+
+        <em>
+          FASHION
+        </em>
+
+        <span>
+          LAB
+        </span>
+
       </div>
+
 
       <section className="auth-card">
 
@@ -492,170 +623,264 @@ async function forgotPassword(e) {
           YOUR ACCOUNT
         </p>
 
+
         <h1>
+
           {mode === "login"
             ? "Welcome back."
-            : "Join the Fashion Lab."}
+            : mode === "register"
+            ? "Join the Fashion Lab."
+            : "Reset your password."}
+
         </h1>
 
+
         <p className="auth-intro">
+
           {mode === "login"
             ? "Sign in to view your orders and continue your wardrobe story."
-            : "Create an account to save your orders and discover your next favourite piece."}
+            : mode === "register"
+            ? "Create an account to save your orders and discover your next favourite piece."
+            : "Enter your email address and we'll send you a password reset link."}
+
         </p>
-{mode === "forgot" ? (
-  <form
-    className="premium-account-form"
-    onSubmit={forgotPassword}
-  >
 
-    <label>
-      EMAIL
 
-      <input
-        required
-        type="email"
-        placeholder="you@example.com"
-        value={forgotEmail}
-        onChange={(e) =>
-          setForgotEmail(e.target.value)
-        }
-      />
-    </label>
+        {/* =================================================
+            FORGOT PASSWORD FORM
+        ================================================= */}
 
-    {err && (
-      <p className="error">
-        {err}
-      </p>
-    )}
+        {mode === "forgot" ? (
 
-    {forgotMessage && (
-      <p className="success-message">
-        {forgotMessage}
-      </p>
-    )}
+          <form
+            className="premium-account-form"
+            onSubmit={forgotPassword}
+          >
 
-    <button
-      disabled={forgotLoading}
-      className="auth-submit"
-    >
-      {forgotLoading
-        ? "PLEASE WAIT..."
-        : "SEND RESET LINK"}
-
-      {!forgotLoading && (
-        <ArrowRight size={16} />
-      )}
-    </button>
-
-  </form>
-) : (
-        <form
-          className="premium-account-form"
-          onSubmit={submit}
-        >
-
-          {mode === "register" && (
             <label>
-              FULL NAME
+
+              EMAIL
 
               <input
                 required
-                placeholder="Your full name"
-                value={f.name}
+                type="email"
+                placeholder="you@example.com"
+                value={forgotEmail}
+                onChange={(e) =>
+                  setForgotEmail(
+                    e.target.value
+                  )
+                }
+              />
+
+            </label>
+
+
+            {err && (
+
+              <p className="error">
+                {err}
+              </p>
+
+            )}
+
+
+            {forgotMessage && (
+
+              <p className="success-message">
+                {forgotMessage}
+              </p>
+
+            )}
+
+
+            <button
+              type="submit"
+              disabled={forgotLoading}
+              className="auth-submit"
+            >
+
+              {forgotLoading
+                ? "PLEASE WAIT..."
+                : "SEND RESET LINK"}
+
+              {!forgotLoading && (
+                <ArrowRight size={16} />
+              )}
+
+            </button>
+
+          </form>
+
+        ) : (
+
+
+          /* =================================================
+             LOGIN / REGISTER FORM
+          ================================================= */
+
+          <form
+            className="premium-account-form"
+            onSubmit={submit}
+          >
+
+            {mode === "register" && (
+
+              <label>
+
+                FULL NAME
+
+                <input
+                  required
+                  placeholder="Your full name"
+                  value={f.name}
+                  onChange={(e) =>
+                    setF({
+                      ...f,
+                      name: e.target.value
+                    })
+                  }
+                />
+
+              </label>
+
+            )}
+
+
+            <label>
+
+              EMAIL
+
+              <input
+                required
+                type="email"
+                placeholder="you@example.com"
+                value={f.email}
                 onChange={(e) =>
                   setF({
                     ...f,
-                    name: e.target.value
+                    email: e.target.value
                   })
                 }
               />
+
             </label>
-          )}
 
-          <label>
-            EMAIL
 
-            <input
-              required
-              type="email"
-              placeholder="you@example.com"
-              value={f.email}
-              onChange={(e) =>
-                setF({
-                  ...f,
-                  email: e.target.value
-                })
-              }
-            />
-          </label>
+            <label>
 
-          <label>
-            PASSWORD
+              PASSWORD
 
-            <input
-              required
-              minLength="6"
-              type="password"
-              placeholder="Your password"
-              value={f.password}
-              onChange={(e) =>
-                setF({
-                  ...f,
-                  password: e.target.value
-                })
-              }
+              <input
+                required
+                minLength="6"
+                type="password"
+                placeholder="Your password"
+                value={f.password}
+                onChange={(e) =>
+                  setF({
+                    ...f,
+                    password: e.target.value
+                  })
+                }
               />
-{mode === "login" && (
-  <button
-    type="button"
-    className="forgot-password"
-    onClick={() => {
-      setErr("");
-      setMode("forgot");
-    }}
-  >
-    Forgot password?
-  </button>
-)}
-          </label>
 
-          {err && (
-            <p className="error">
-              {err}
-            </p>
-          )}
+            </label>
 
-          <button
-            disabled={loading}
-            className="auth-submit"
-          >
-            {loading
-              ? "PLEASE WAIT..."
-              : mode === "login"
-              ? "LOGIN"
-              : "CREATE ACCOUNT"}
 
-            {!loading && (
-              <ArrowRight size={16} />
+            {/* FORGOT PASSWORD */}
+
+            {mode === "login" && (
+
+              <button
+                type="button"
+                className="forgot-password"
+                onClick={() => {
+
+                  setErr("");
+                  setForgotMessage("");
+
+                  setForgotEmail(
+                    f.email
+                  );
+
+                  setMode("forgot");
+
+                }}
+              >
+                Forgot password?
+              </button>
+
             )}
-          </button>
 
-        </form>
-)}
+
+            {err && (
+
+              <p className="error">
+                {err}
+              </p>
+
+            )}
+
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="auth-submit"
+            >
+
+              {loading
+                ? "PLEASE WAIT..."
+                : mode === "login"
+                ? "LOGIN"
+                : "CREATE ACCOUNT"}
+
+              {!loading && (
+                <ArrowRight size={16} />
+              )}
+
+            </button>
+
+          </form>
+
+        )}
+
+
+        {/* =================================================
+            SWITCH LOGIN / REGISTER / FORGOT
+        ================================================= */}
+
+        <button
+          type="button"
+          className="auth-switch"
           onClick={() => {
-            setErr("");
 
-            setMode(
-              mode === "login"
-                ? "register"
-                : "login"
-            );
+            setErr("");
+            setForgotMessage("");
+
+            if (mode === "forgot") {
+
+              setMode("login");
+
+            } else {
+
+              setMode(
+                mode === "login"
+                  ? "register"
+                  : "login"
+              );
+
+            }
+
           }}
         >
+
           {mode === "login"
             ? "Don't have an account? Create one"
-            : "Already registered? Login"}
+            : mode === "register"
+            ? "Already registered? Login"
+            : "Back to Login"}
+
         </button>
 
       </section>

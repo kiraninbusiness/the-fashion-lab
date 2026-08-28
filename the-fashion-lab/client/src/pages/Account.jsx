@@ -7,7 +7,7 @@ import {
   ShoppingBag,
   UserRound,
   Truck,
-  CheckCircle2,
+  CheckCircle,
   XCircle
 } from "lucide-react";
 import { api } from "../api";
@@ -16,47 +16,26 @@ const money = (n) =>
   `₹${Number(n).toLocaleString("en-IN")}`;
 
 const trackingSteps = [
-  {
-    key: "pending",
-    label: "ORDER PLACED",
-    description: "We've received your order."
-  },
-  {
-    key: "processing",
-    label: "PROCESSING",
-    description: "Your order is being prepared."
-  },
-  {
-    key: "shipped",
-    label: "SHIPPED",
-    description: "Your order is on its way."
-  },
-  {
-    key: "delivered",
-    label: "DELIVERED",
-    description: "Your order has arrived."
-  }
+  "pending",
+  "processing",
+  "shipped",
+  "delivered"
 ];
 
-function OrderTracking({ status }) {
+function Tracking({ status }) {
   if (status === "cancelled") {
     return (
       <div className="order-tracking cancelled-tracking">
-        <div className="tracking-cancelled-icon">
-          <XCircle size={22} />
-        </div>
-
-        <div>
-          <strong>ORDER CANCELLED</strong>
-          <p>This order has been cancelled.</p>
+        <div className="tracking-cancelled">
+          <XCircle size={18} />
+          <span>Order cancelled</span>
         </div>
       </div>
     );
   }
 
-  const currentIndex = trackingSteps.findIndex(
-    (step) => step.key === status
-  );
+  const current =
+    trackingSteps.indexOf(status);
 
   return (
     <div className="order-tracking">
@@ -64,48 +43,35 @@ function OrderTracking({ status }) {
       {trackingSteps.map((step, index) => {
 
         const completed =
-          index <= currentIndex;
-
-        const current =
-          index === currentIndex;
+          index <= current;
 
         return (
           <div
-            className={`tracking-step ${
-              completed ? "completed" : ""
-            } ${current ? "current" : ""}`}
-            key={step.key}
+            className={
+              completed
+                ? "tracking-step completed"
+                : "tracking-step"
+            }
+            key={step}
           >
 
             <div className="tracking-icon">
               {completed ? (
-                <CheckCircle2 size={20} />
+                <CheckCircle size={17} />
               ) : (
                 <span>{index + 1}</span>
               )}
             </div>
 
-            <div className="tracking-content">
-
-              <strong>
-                {step.label}
-              </strong>
-
-              <p>
-                {step.description}
-              </p>
-
-            </div>
-
-            {index < trackingSteps.length - 1 && (
-              <div
-                className={`tracking-line ${
-                  index < currentIndex
-                    ? "filled"
-                    : ""
-                }`}
-              />
-            )}
+            <small>
+              {step === "pending"
+                ? "Order Placed"
+                : step === "processing"
+                ? "Processing"
+                : step === "shipped"
+                ? "Shipped"
+                : "Delivered"}
+            </small>
 
           </div>
         );
@@ -119,7 +85,9 @@ export default function Account({
   user,
   setUser
 }) {
-  const [mode, setMode] = useState("login");
+
+  const [mode, setMode] =
+    useState("login");
 
   const [f, setF] = useState({
     name: "",
@@ -127,50 +95,75 @@ export default function Account({
     password: ""
   });
 
-  const [err, setErr] = useState("");
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [expandedOrder, setExpandedOrder] =
-    useState(null);
-  const [cancelling, setCancelling] =
+  const [err, setErr] =
+    useState("");
+
+  const [orders, setOrders] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [canceling, setCanceling] =
     useState(null);
 
   useEffect(() => {
+
     if (user) {
+
       loadOrders();
+
     }
+
   }, [user]);
 
   async function loadOrders() {
+
     try {
-      const data = await api("/orders/mine");
+
+      const data =
+        await api("/orders/mine");
+
       setOrders(data);
-    } catch (e) {
+
+    } catch {
+
       setOrders([]);
+
     }
+
   }
 
   function logout() {
-    localStorage.removeItem("thrift_token");
-    localStorage.removeItem("thrift_user");
+
+    localStorage.removeItem(
+      "thrift_token"
+    );
+
+    localStorage.removeItem(
+      "thrift_user"
+    );
+
     setUser(null);
+
   }
 
-  async function cancelOrder(orderId) {
+  async function cancelOrder(id) {
 
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to cancel this order?"
+      );
 
     if (!confirmed) return;
 
-    setCancelling(orderId);
+    setCanceling(id);
     setErr("");
 
     try {
 
       await api(
-        `/orders/${orderId}/cancel`,
+        `/orders/${id}/cancel`,
         {
           method: "PATCH"
         }
@@ -178,24 +171,23 @@ export default function Account({
 
       await loadOrders();
 
-      setExpandedOrder(orderId);
-
     } catch (e) {
 
       setErr(e.message);
 
     } finally {
 
-      setCancelling(null);
+      setCanceling(null);
 
     }
+
   }
 
   if (user) {
-    return (
-      <main className="account-premium">
 
-        {/* ACCOUNT HERO */}
+    return (
+
+      <main className="account-premium">
 
         <section className="account-hero">
 
@@ -224,8 +216,6 @@ export default function Account({
         </section>
 
 
-        {/* ACCOUNT TOOLBAR */}
-
         <section className="account-toolbar">
 
           <div className="account-welcome">
@@ -233,20 +223,24 @@ export default function Account({
             <Package size={18} />
 
             <span>
+
               <strong>
                 Your wardrobe story
               </strong>
 
               <small>
-                Manage your orders and account.
+                Track and manage your orders.
               </small>
+
             </span>
 
           </div>
 
+
           <div className="account-actions">
 
             {user.role === "admin" && (
+
               <Link
                 className="account-admin-button"
                 to="/admin"
@@ -254,6 +248,7 @@ export default function Account({
                 ADMIN DASHBOARD
                 <ArrowRight size={15} />
               </Link>
+
             )}
 
             <button
@@ -269,7 +264,12 @@ export default function Account({
         </section>
 
 
-        {/* ORDERS */}
+        {err && (
+          <p className="error">
+            {err}
+          </p>
+        )}
+
 
         <section className="account-orders">
 
@@ -295,13 +295,6 @@ export default function Account({
             </span>
 
           </div>
-
-
-          {err && (
-            <p className="error">
-              {err}
-            </p>
-          )}
 
 
           {!orders.length ? (
@@ -341,167 +334,114 @@ export default function Account({
 
             <div className="orders-list">
 
-              {orders.map((o) => {
+              {orders.map((o) => (
 
-                const isExpanded =
-                  expandedOrder === o.id;
+                <article
+                  className="premium-order-card"
+                  key={o.id}
+                >
 
-                const canCancel =
-                  o.status === "pending";
+                  <div className="order-main">
 
-                return (
-                  <article
-                    className={`premium-order-card ${
-                      isExpanded
-                        ? "order-expanded"
-                        : ""
-                    }`}
-                    key={o.id}
-                  >
-
-                    {/* ORDER HEADER */}
-
-                    <div className="order-main">
-
-                      <div className="order-icon">
-
-                        {o.status === "shipped" ? (
-                          <Truck size={20} />
-                        ) : (
-                          <Package size={20} />
-                        )}
-
-                      </div>
-
-                      <div className="order-info">
-
-                        <span className="order-label">
-                          ORDER
-                        </span>
-
-                        <strong>
-                          #{o.id}
-                        </strong>
-
-                        <small>
-                          {new Date(
-                            o.created_at
-                          ).toLocaleDateString(
-                            "en-IN",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric"
-                            }
-                          )}
-                        </small>
-
-                      </div>
-
+                    <div className="order-icon">
+                      <Package size={20} />
                     </div>
 
+                    <div className="order-info">
 
-                    {/* STATUS */}
-
-                    <div className="order-status">
-
-                      <span
-                        className={`status status-${o.status}`}
-                      >
-                        {o.status}
-                      </span>
-
-                    </div>
-
-
-                    {/* TOTAL */}
-
-                    <div className="order-total">
-
-                      <span>
-                        TOTAL
+                      <span className="order-label">
+                        ORDER
                       </span>
 
                       <strong>
-                        {money(o.total)}
+                        #{o.id}
                       </strong>
 
+                      <small>
+                        {new Date(
+                          o.created_at
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric"
+                          }
+                        )}
+                      </small>
+
                     </div>
 
+                  </div>
 
-                    {/* ACTIONS */}
 
-                    <div className="order-actions">
+                  <div className="order-status">
+
+                    <span
+                      className={`status status-${o.status}`}
+                    >
+                      {o.status}
+                    </span>
+
+                  </div>
+
+
+                  <div className="order-total">
+
+                    <span>
+                      TOTAL
+                    </span>
+
+                    <strong>
+                      {money(o.total)}
+                    </strong>
+
+                  </div>
+
+
+                  {/* TRACKING */}
+
+                  <Tracking
+                    status={o.status}
+                  />
+
+
+                  {/* CANCEL */}
+
+                  {o.status === "pending" && (
+
+                    <div className="order-cancel-area">
 
                       <button
-                        type="button"
-                        className="track-order-button"
+                        className="cancel-order-button"
+                        disabled={
+                          canceling === o.id
+                        }
                         onClick={() =>
-                          setExpandedOrder(
-                            isExpanded
-                              ? null
-                              : o.id
-                          )
+                          cancelOrder(o.id)
                         }
                       >
-                        {isExpanded
-                          ? "HIDE TRACKING"
-                          : "TRACK ORDER"}
 
-                        <ArrowRight size={15} />
+                        <XCircle size={15} />
+
+                        {canceling === o.id
+                          ? "CANCELLING..."
+                          : "CANCEL ORDER"}
+
                       </button>
 
-                      {canCancel && (
-                        <button
-                          type="button"
-                          className="cancel-order-button"
-                          disabled={
-                            cancelling === o.id
-                          }
-                          onClick={() =>
-                            cancelOrder(o.id)
-                          }
-                        >
-                          {cancelling === o.id
-                            ? "CANCELLING..."
-                            : "CANCEL ORDER"}
-                        </button>
-                      )}
+                      <small>
+                        Cancellation is available
+                        while your order is pending.
+                      </small>
 
                     </div>
 
+                  )}
 
-                    {/* TRACKING */}
+                </article>
 
-                    {isExpanded && (
-                      <div className="order-tracking-panel">
-
-                        <div className="tracking-header">
-
-                          <div>
-                            <p className="eyebrow">
-                              ORDER #{o.id}
-                            </p>
-
-                            <h3>
-                              Track your order
-                            </h3>
-                          </div>
-
-                          <Package size={22} />
-
-                        </div>
-
-                        <OrderTracking
-                          status={o.status}
-                        />
-
-                      </div>
-                    )}
-
-                  </article>
-                );
-              })}
+              ))}
 
             </div>
 
@@ -509,8 +449,6 @@ export default function Account({
 
         </section>
 
-
-        {/* FOOTER MESSAGE */}
 
         <section className="account-footer-message">
 
@@ -531,7 +469,9 @@ export default function Account({
         </section>
 
       </main>
+
     );
+
   }
 
 
@@ -546,13 +486,14 @@ export default function Account({
 
     try {
 
-      const d = await api(
-        "/auth/" + mode,
-        {
-          method: "POST",
-          body: JSON.stringify(f)
-        }
-      );
+      const d =
+        await api(
+          "/auth/" + mode,
+          {
+            method: "POST",
+            body: JSON.stringify(f)
+          }
+        );
 
       localStorage.setItem(
         "thrift_token",
@@ -575,10 +516,12 @@ export default function Account({
       setLoading(false);
 
     }
+
   }
 
 
   return (
+
     <main className="account-auth">
 
       <div className="auth-decoration">
@@ -615,6 +558,7 @@ export default function Account({
         >
 
           {mode === "register" && (
+
             <label>
 
               FULL NAME
@@ -632,6 +576,7 @@ export default function Account({
               />
 
             </label>
+
           )}
 
 
@@ -727,5 +672,7 @@ export default function Account({
       </section>
 
     </main>
+
   );
+
 }

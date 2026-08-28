@@ -1,0 +1,536 @@
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  Package,
+  Truck,
+  XCircle
+} from "lucide-react";
+import { api } from "../api";
+
+const money = (n) =>
+  `₹${Number(n).toLocaleString("en-IN")}`;
+
+const steps = [
+  {
+    key: "pending",
+    label: "Order Placed",
+    description: "Your order has been received."
+  },
+  {
+    key: "processing",
+    label: "Processing",
+    description: "Your order is being prepared."
+  },
+  {
+    key: "shipped",
+    label: "Shipped",
+    description: "Your order is on the way."
+  },
+  {
+    key: "delivered",
+    label: "Delivered",
+    description: "Your order has been delivered."
+  }
+];
+
+function TrackingTimeline({ status }) {
+
+  if (status === "cancelled") {
+    return (
+      <div className="track-cancelled">
+        <XCircle size={28} />
+
+        <div>
+          <strong>Order Cancelled</strong>
+          <p>
+            This order has been cancelled.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const current =
+    steps.findIndex(
+      (step) => step.key === status
+    );
+
+  return (
+    <div className="track-timeline">
+
+      {steps.map((step, index) => {
+
+        const completed =
+          index <= current;
+
+        return (
+          <div
+            className={
+              completed
+                ? "track-step completed"
+                : "track-step"
+            }
+            key={step.key}
+          >
+
+            <div className="track-step-icon">
+              {completed ? (
+                <CheckCircle size={20} />
+              ) : (
+                <span>{index + 1}</span>
+              )}
+            </div>
+
+            <div className="track-step-content">
+
+              <strong>
+                {step.label}
+              </strong>
+
+              <p>
+                {step.description}
+              </p>
+
+            </div>
+
+          </div>
+        );
+
+      })}
+
+    </div>
+  );
+}
+
+export default function TrackOrder({ user }) {
+
+  const { id } = useParams();
+
+  const [order, setOrder] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [err, setErr] =
+    useState("");
+
+  const [canceling, setCanceling] =
+    useState(false);
+
+  useEffect(() => {
+
+    loadOrder();
+
+  }, [id]);
+
+  async function loadOrder() {
+
+    try {
+
+      setLoading(true);
+
+      const orders =
+        await api("/orders/mine");
+
+      const found =
+        orders.find(
+          (o) =>
+            String(o.id) === String(id)
+        );
+
+      if (!found) {
+        setErr("Order not found.");
+        return;
+      }
+
+      setOrder(found);
+
+    } catch (e) {
+
+      setErr(e.message);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }
+
+  async function cancelOrder() {
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to cancel this order?"
+      );
+
+    if (!confirmed) return;
+
+    try {
+
+      setCanceling(true);
+
+      await api(
+        `/orders/${id}/cancel`,
+        {
+          method: "PATCH"
+        }
+      );
+
+      await loadOrder();
+
+    } catch (e) {
+
+      setErr(e.message);
+
+    } finally {
+
+      setCanceling(false);
+
+    }
+
+  }
+
+  if (!user) {
+
+    return (
+      <main className="page">
+
+        <p className="eyebrow">
+          THE FASHION LAB
+        </p>
+
+        <h1>
+          Please sign in.
+        </h1>
+
+        <Link
+          to="/account"
+          className="button dark"
+        >
+          GO TO ACCOUNT
+          <ArrowRight size={16} />
+        </Link>
+
+      </main>
+    );
+
+  }
+
+  if (loading) {
+
+    return (
+      <main className="track-page">
+
+        <p className="eyebrow">
+          THE FASHION LAB
+        </p>
+
+        <h1>
+          Loading order...
+        </h1>
+
+      </main>
+    );
+
+  }
+
+  if (err || !order) {
+
+    return (
+      <main className="track-page">
+
+        <p className="eyebrow">
+          ORDER
+        </p>
+
+        <h1>
+          Order not found.
+        </h1>
+
+        <p className="muted">
+          {err}
+        </p>
+
+        <Link
+          to="/account"
+          className="button dark"
+        >
+          BACK TO ACCOUNT
+          <ArrowLeft size={16} />
+        </Link>
+
+      </main>
+    );
+
+  }
+
+  const orderDate =
+    new Date(
+      order.created_at
+    ).toLocaleDateString(
+      "en-IN",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }
+    );
+
+  return (
+
+    <main className="track-page">
+
+      <Link
+        to="/account"
+        className="track-back"
+      >
+        <ArrowLeft size={15} />
+        BACK TO MY ORDERS
+      </Link>
+
+
+      <section className="track-header">
+
+        <div>
+
+          <p className="eyebrow">
+            THE FASHION LAB
+          </p>
+
+          <h1>
+            Track your
+            <br />
+            <em>order.</em>
+          </h1>
+
+          <p className="track-order-number">
+            ORDER #{order.id}
+          </p>
+
+        </div>
+
+        <div className="track-header-status">
+
+          <span
+            className={`status status-${order.status}`}
+          >
+            {order.status}
+          </span>
+
+          <small>
+            Placed on {orderDate}
+          </small>
+
+        </div>
+
+      </section>
+
+
+      {/* TRACKING */}
+
+      <section className="track-card">
+
+        <div className="track-card-heading">
+
+          <div>
+            <p className="eyebrow">
+              ORDER PROGRESS
+            </p>
+
+            <h2>
+              Where is my order?
+            </h2>
+          </div>
+
+          <Truck size={22} />
+
+        </div>
+
+        <TrackingTimeline
+          status={order.status}
+        />
+
+      </section>
+
+
+      {/* PRODUCTS */}
+
+      <section className="track-card">
+
+        <div className="track-card-heading">
+
+          <div>
+            <p className="eyebrow">
+              YOUR SELECTION
+            </p>
+
+            <h2>
+              Items in this order
+            </h2>
+          </div>
+
+          <Package size={22} />
+
+        </div>
+
+        <div className="track-products">
+
+          <p className="muted">
+            Product details will appear here
+            once order item details are returned
+            by the API.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      {/* DELIVERY */}
+
+      <section className="track-details-grid">
+
+        <div className="track-card">
+
+          <p className="eyebrow">
+            DELIVERY DETAILS
+          </p>
+
+          <h2>
+            Shipping address
+          </h2>
+
+          <div className="track-address">
+
+            <strong>
+              {order.shipping_name}
+            </strong>
+
+            <span>
+              {order.shipping_phone}
+            </span>
+
+            <span>
+              {order.shipping_address}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div className="track-card">
+
+          <p className="eyebrow">
+            PAYMENT
+          </p>
+
+          <h2>
+            Payment details
+          </h2>
+
+          <div className="payment-detail">
+
+            <span>
+              Method
+            </span>
+
+            <strong>
+              {order.payment_method === "cod"
+                ? "Cash on Delivery"
+                : "Online Payment"}
+            </strong>
+
+          </div>
+
+          <div className="payment-detail">
+
+            <span>
+              Payment status
+            </span>
+
+            <strong>
+              {order.payment_status || "pending"}
+            </strong>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* TOTAL */}
+
+      <section className="track-total">
+
+        <span>
+          ORDER TOTAL
+        </span>
+
+        <strong>
+          {money(order.total)}
+        </strong>
+
+      </section>
+
+
+      {/* CANCEL */}
+
+      {order.status === "pending" && (
+
+        <section className="track-cancel-section">
+
+          <div>
+
+            <strong>
+              Need to cancel?
+            </strong>
+
+            <p>
+              You can cancel this order while
+              it is still pending.
+            </p>
+
+          </div>
+
+          <button
+            className="cancel-order-button"
+            disabled={canceling}
+            onClick={cancelOrder}
+          >
+
+            <XCircle size={15} />
+
+            {canceling
+              ? "CANCELLING..."
+              : "CANCEL ORDER"}
+
+          </button>
+
+        </section>
+
+      )}
+
+
+      <div className="track-bottom">
+
+        <Link to="/shop">
+
+          CONTINUE SHOPPING
+
+          <ArrowRight size={15} />
+
+        </Link>
+
+      </div>
+
+    </main>
+
+  );
+}

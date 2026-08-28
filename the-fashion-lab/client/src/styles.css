@@ -8106,3 +8106,64 @@
     width: 100%;
   }
 }
+/* =========================================
+   ADMIN PRODUCT FILTERS — FINAL OVERRIDE
+========================================= */
+
+.admin-product-controls {
+  display: grid !important;
+  grid-template-columns: minmax(200px, 1.5fr) minmax(150px, 1fr) minmax(150px, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin: 24px 0 10px !important;
+}
+
+.admin-product-controls input,
+.admin-product-controls select {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 46px !important;
+  padding: 0 14px !important;
+
+  border: 1px solid #dedbd5 !important;
+  border-radius: 4px !important;
+
+  background: #fff !important;
+  color: #171717 !important;
+
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+
+  outline: none !important;
+  appearance: auto !important;
+}
+
+.admin-product-controls input::placeholder {
+  color: #8a8a8a !important;
+}
+
+.admin-product-controls input:focus,
+.admin-product-controls select:focus {
+  border-color: #171717 !important;
+  box-shadow: none !important;
+}
+
+.admin-product-results {
+  display: block !important;
+  margin: 12px 0 18px !important;
+  font-size: 12px !important;
+  color: #777 !important;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+
+  .admin-product-controls {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+}

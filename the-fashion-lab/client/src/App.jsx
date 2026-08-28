@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link, Route, Routes, useNavigate } from "react-router-dom";
+import {
+  Link,
+  Route,
+  Routes,
+  useNavigate,
+  useSearchParams
+} from "react-router-dom";
 import {
   Menu,
   X,
@@ -517,50 +523,244 @@ function Home({ products, ...props }) {
 );
 }
 function Shop({ products, ...props }) {
-  const [cat, setCat] = useState("All");
-  const [q, setQ] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [cat, setCat] = useState(
+    searchParams.get("category") || "All"
+  );
+
+  const [gender, setGender] = useState(
+    searchParams.get("gender") || "All"
+  );
+
+  const [size, setSize] = useState(
+    searchParams.get("size") || "All"
+  );
+
+  const [q, setQ] = useState(
+    searchParams.get("search") || ""
+  );
+
   const [sort, setSort] = useState("featured");
 
+  const [maxPrice, setMaxPrice] = useState(5000);
+
+  const [onlyAvailable, setOnlyAvailable] =
+    useState(false);
+
+  const [filtersOpen, setFiltersOpen] =
+    useState(false);
+
+  // --------------------------------
+  // AVAILABLE FILTER OPTIONS
+  // --------------------------------
+
+  const categories = [
+    "All",
+    ...new Set(
+      products
+        .map((p) => p.category)
+        .filter(Boolean)
+    )
+  ];
+
+  const genders = [
+    "All",
+    ...new Set(
+      products
+        .map((p) => p.gender)
+        .filter(Boolean)
+    )
+  ];
+
+  const sizes = [
+    "All",
+    ...new Set(
+      products
+        .map((p) => p.size)
+        .filter(Boolean)
+    )
+  ];
+
+  const highestProductPrice =
+    products.length > 0
+      ? Math.max(
+          ...products.map((p) =>
+            Number(p.price)
+          )
+        )
+      : 5000;
+
+  const priceLimit = Math.max(
+    highestProductPrice,
+    5000
+  );
+
+  // --------------------------------
+  // FILTER PRODUCTS
+  // --------------------------------
+
   const filtered = products.filter((p) => {
+
     const matchesCategory =
-      cat === "All" || p.category === cat;
+      cat === "All" ||
+      p.category === cat;
+
+    const matchesGender =
+      gender === "All" ||
+      p.gender === gender;
+
+    const matchesSize =
+      size === "All" ||
+      p.size === size;
 
     const matchesSearch =
       `${p.name} ${p.category} ${p.gender} ${p.size}`
         .toLowerCase()
-        .includes(q.toLowerCase());
+        .includes(
+          q.trim().toLowerCase()
+        );
 
-    return matchesCategory && matchesSearch;
+    const matchesPrice =
+      Number(p.price) <= Number(maxPrice);
+
+    const matchesStock =
+      !onlyAvailable ||
+      Number(p.stock) > 0;
+
+    return (
+      matchesCategory &&
+      matchesGender &&
+      matchesSize &&
+      matchesSearch &&
+      matchesPrice &&
+      matchesStock
+    );
   });
 
-  const list = [...filtered].sort((a, b) => {
-    if (sort === "price-low") {
-      return Number(a.price) - Number(b.price);
-    }
+  // --------------------------------
+  // SORT
+  // --------------------------------
 
-    if (sort === "price-high") {
-      return Number(b.price) - Number(a.price);
-    }
+  const list = [...filtered].sort(
+    (a, b) => {
 
-    if (sort === "newest") {
-      return Number(b.id) - Number(a.id);
-    }
+      if (sort === "price-low") {
+        return (
+          Number(a.price) -
+          Number(b.price)
+        );
+      }
 
-    return 0;
-  });
+      if (sort === "price-high") {
+        return (
+          Number(b.price) -
+          Number(a.price)
+        );
+      }
+
+      if (sort === "newest") {
+        return (
+          Number(b.id) -
+          Number(a.id)
+        );
+      }
+
+      if (sort === "discount") {
+
+        const discountA =
+          a.old_price
+            ? Number(a.old_price) -
+              Number(a.price)
+            : 0;
+
+        const discountB =
+          b.old_price
+            ? Number(b.old_price) -
+              Number(b.price)
+            : 0;
+
+        return discountB - discountA;
+      }
+
+      return 0;
+    }
+  );
+
+  // --------------------------------
+  // CLEAR FILTERS
+  // --------------------------------
 
   const clearFilters = () => {
+
     setCat("All");
+    setGender("All");
+    setSize("All");
     setQ("");
     setSort("featured");
+    setMaxPrice(priceLimit);
+    setOnlyAvailable(false);
+
+    setSearchParams({});
   };
+
+  // --------------------------------
+  // UPDATE URL
+  // --------------------------------
+
+  useEffect(() => {
+
+    const params = {};
+
+    if (q.trim()) {
+      params.search = q.trim();
+    }
+
+    if (cat !== "All") {
+      params.category = cat;
+    }
+
+    if (gender !== "All") {
+      params.gender = gender;
+    }
+
+    if (size !== "All") {
+      params.size = size;
+    }
+
+    setSearchParams(
+      params,
+      { replace: true }
+    );
+
+  }, [
+    q,
+    cat,
+    gender,
+    size,
+    setSearchParams
+  ]);
+
+  const activeFilters =
+    cat !== "All" ||
+    gender !== "All" ||
+    size !== "All" ||
+    q.trim() !== "" ||
+    maxPrice < priceLimit ||
+    onlyAvailable ||
+    sort !== "featured";
 
   return (
     <main className="page shop-page">
 
+      {/* ================================
+          SHOP HEADER
+      ================================= */}
+
       <div className="shop-heading">
 
         <div>
+
           <p className="eyebrow">
             THE CURRENT DROP
           </p>
@@ -571,124 +771,407 @@ function Shop({ products, ...props }) {
 
           <p className="shop-result-count">
             {list.length}{" "}
-            {list.length === 1 ? "piece" : "pieces"}
+            {list.length === 1
+              ? "piece"
+              : "pieces"}
           </p>
-        </div>
-
-      </div>
-
-      <div className="shop-tools">
-
-        <div className="filters">
-          {[
-            "All",
-            "Vintage",
-            "Streetwear",
-            "Casual"
-          ].map((c) => (
-            <button
-              type="button"
-              className={cat === c ? "active" : ""}
-              onClick={() => setCat(c)}
-              key={c}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-
-        <div className="shop-controls">
-
-          <input
-            value={q}
-            onChange={(e) =>
-              setQ(e.target.value)
-            }
-            placeholder="Search pieces..."
-          />
-
-          <select
-            value={sort}
-            onChange={(e) =>
-              setSort(e.target.value)
-            }
-          >
-            <option value="featured">
-              Featured
-            </option>
-
-            <option value="newest">
-              Newest
-            </option>
-
-            <option value="price-low">
-              Price: Low to High
-            </option>
-
-            <option value="price-high">
-              Price: High to Low
-            </option>
-          </select>
 
         </div>
 
       </div>
 
-      {(cat !== "All" || q || sort !== "featured") && (
-        <button
-          type="button"
-          className="clear-filters"
-          onClick={clearFilters}
+      {/* ================================
+          MOBILE FILTER BUTTON
+      ================================= */}
+
+      <button
+        type="button"
+        className="mobile-filter-button"
+        onClick={() =>
+          setFiltersOpen(!filtersOpen)
+        }
+      >
+        {filtersOpen
+          ? "CLOSE FILTERS"
+          : "FILTER & SORT"}
+      </button>
+
+      {/* ================================
+          SHOP LAYOUT
+      ================================= */}
+
+      <div className="shop-layout">
+
+        {/* ==============================
+            FILTER SIDEBAR
+        =============================== */}
+
+        <aside
+          className={
+            filtersOpen
+              ? "shop-sidebar open"
+              : "shop-sidebar"
+          }
         >
-          CLEAR FILTERS
-        </button>
-      )}
 
-      {list.length > 0 ? (
+          <div className="filter-header">
 
-        <div className="grid">
+            <strong>
+              FILTERS
+            </strong>
 
-          {list.map((p) => (
-            <Card
-              key={p.id}
-              p={p}
-              {...props}
+            {activeFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+              >
+                CLEAR ALL
+              </button>
+            )}
+
+          </div>
+
+          {/* SEARCH */}
+
+          <div className="filter-group">
+
+            <label>
+              SEARCH
+            </label>
+
+            <input
+              value={q}
+              onChange={(e) =>
+                setQ(e.target.value)
+              }
+              placeholder="Search pieces..."
             />
-          ))}
 
-        </div>
+          </div>
 
-      ) : (
+          {/* CATEGORY */}
 
-        <section className="shop-empty">
+          <div className="filter-group">
 
-          <p className="eyebrow">
-            NO PIECES FOUND
-          </p>
+            <label>
+              CATEGORY
+            </label>
 
-          <h2>
-            Nothing matches
-            <br />
-            <em>your search.</em>
-          </h2>
+            <div className="filter-options">
 
-          <p>
-            Try another search or clear your filters
-            to explore the full collection.
-          </p>
+              {categories.map((c) => (
 
-          <button
-            type="button"
-            className="button dark"
-            onClick={clearFilters}
-          >
-            VIEW ALL PIECES
-            <ArrowRight size={16} />
-          </button>
+                <button
+                  type="button"
+                  key={c}
+                  className={
+                    cat === c
+                      ? "filter-option active"
+                      : "filter-option"
+                  }
+                  onClick={() =>
+                    setCat(c)
+                  }
+                >
+                  {c}
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* GENDER */}
+
+          <div className="filter-group">
+
+            <label>
+              GENDER
+            </label>
+
+            <div className="filter-options">
+
+              {genders.map((g) => (
+
+                <button
+                  type="button"
+                  key={g}
+                  className={
+                    gender === g
+                      ? "filter-option active"
+                      : "filter-option"
+                  }
+                  onClick={() =>
+                    setGender(g)
+                  }
+                >
+                  {g}
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* SIZE */}
+
+          <div className="filter-group">
+
+            <label>
+              SIZE
+            </label>
+
+            <div className="filter-options">
+
+              {sizes.map((s) => (
+
+                <button
+                  type="button"
+                  key={s}
+                  className={
+                    size === s
+                      ? "filter-option active"
+                      : "filter-option"
+                  }
+                  onClick={() =>
+                    setSize(s)
+                  }
+                >
+                  {s}
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+          {/* PRICE */}
+
+          <div className="filter-group">
+
+            <div className="price-filter-head">
+
+              <label>
+                MAX PRICE
+              </label>
+
+              <strong>
+                {money(maxPrice)}
+              </strong>
+
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max={priceLimit}
+              step="100"
+              value={maxPrice}
+              onChange={(e) =>
+                setMaxPrice(
+                  Number(e.target.value)
+                )
+              }
+            />
+
+            <div className="price-range-labels">
+
+              <span>
+                ₹0
+              </span>
+
+              <span>
+                {money(priceLimit)}
+              </span>
+
+            </div>
+
+          </div>
+
+          {/* STOCK */}
+
+          <div className="filter-group">
+
+            <label className="checkbox-filter">
+
+              <input
+                type="checkbox"
+                checked={onlyAvailable}
+                onChange={(e) =>
+                  setOnlyAvailable(
+                    e.target.checked
+                  )
+                }
+              />
+
+              <span>
+                SHOW ONLY AVAILABLE
+              </span>
+
+            </label>
+
+          </div>
+
+        </aside>
+
+        {/* ==============================
+            PRODUCTS AREA
+        =============================== */}
+
+        <section className="shop-products">
+
+          <div className="shop-topbar">
+
+            <div>
+
+              <span>
+                {list.length}{" "}
+                {list.length === 1
+                  ? "PIECE"
+                  : "PIECES"}
+              </span>
+
+            </div>
+
+            <select
+              value={sort}
+              onChange={(e) =>
+                setSort(e.target.value)
+              }
+            >
+
+              <option value="featured">
+                Featured
+              </option>
+
+              <option value="newest">
+                Newest
+              </option>
+
+              <option value="price-low">
+                Price: Low to High
+              </option>
+
+              <option value="price-high">
+                Price: High to Low
+              </option>
+
+              <option value="discount">
+                Biggest Discount
+              </option>
+
+            </select>
+
+          </div>
+
+          {/* ACTIVE FILTERS */}
+
+          {activeFilters && (
+            <div className="active-filter-bar">
+
+              {q && (
+                <span>
+                  Search: "{q}"
+                </span>
+              )}
+
+              {cat !== "All" && (
+                <span>
+                  {cat}
+                </span>
+              )}
+
+              {gender !== "All" && (
+                <span>
+                  {gender}
+                </span>
+              )}
+
+              {size !== "All" && (
+                <span>
+                  Size {size}
+                </span>
+              )}
+
+              {onlyAvailable && (
+                <span>
+                  In Stock
+                </span>
+              )}
+
+              {maxPrice < priceLimit && (
+                <span>
+                  Under {money(maxPrice)}
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={clearFilters}
+              >
+                CLEAR ALL
+              </button>
+
+            </div>
+          )}
+
+          {/* PRODUCTS */}
+
+          {list.length > 0 ? (
+
+            <div className="grid">
+
+              {list.map((p) => (
+
+                <Card
+                  key={p.id}
+                  p={p}
+                  {...props}
+                />
+
+              ))}
+
+            </div>
+
+          ) : (
+
+            <section className="shop-empty">
+
+              <p className="eyebrow">
+                NO PIECES FOUND
+              </p>
+
+              <h2>
+                Nothing matches
+                <br />
+                <em>your search.</em>
+              </h2>
+
+              <p>
+                Try changing your filters
+                or explore the complete
+                collection.
+              </p>
+
+              <button
+                type="button"
+                className="button dark"
+                onClick={clearFilters}
+              >
+                VIEW ALL PIECES
+                <ArrowRight size={16} />
+              </button>
+
+            </section>
+
+          )}
 
         </section>
 
-      )}
+      </div>
 
     </main>
   );

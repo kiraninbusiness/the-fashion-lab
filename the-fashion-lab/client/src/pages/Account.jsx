@@ -2,48 +2,94 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  Check,
+  Clock,
   LogOut,
   Package,
   ShoppingBag,
-  UserRound,
   Truck,
-  CheckCircle,
-  XCircle
+  UserRound,
+  X
 } from "lucide-react";
 import { api } from "../api";
 
 const money = (n) =>
   `₹${Number(n).toLocaleString("en-IN")}`;
 
-const trackingSteps = [
-  "pending",
-  "processing",
-  "shipped",
-  "delivered"
+/*
+  ORDER STATUS HELPERS
+*/
+
+const statusSteps = [
+  {
+    key: "pending",
+    label: "Order Placed",
+    description: "Your order has been received."
+  },
+  {
+    key: "processing",
+    label: "Processing",
+    description: "We're preparing your order."
+  },
+  {
+    key: "shipped",
+    label: "Shipped",
+    description: "Your order is on its way."
+  },
+  {
+    key: "delivered",
+    label: "Delivered",
+    description: "Your order has been delivered."
+  }
 ];
 
-function Tracking({ status }) {
+function getStatusIndex(status) {
+  const index = statusSteps.findIndex(
+    (step) => step.key === status
+  );
+
+  return index === -1 ? 0 : index;
+}
+
+
+/*
+  ORDER TRACKING
+*/
+
+function OrderTracking({ status }) {
   if (status === "cancelled") {
     return (
       <div className="order-tracking cancelled-tracking">
-        <div className="tracking-cancelled">
-          <XCircle size={18} />
-          <span>Order cancelled</span>
+
+        <div className="tracking-cancelled-icon">
+          <X size={20} />
         </div>
+
+        <div className="tracking-cancelled-text">
+          <strong>Order Cancelled</strong>
+          <small>
+            This order has been cancelled successfully.
+          </small>
+        </div>
+
       </div>
     );
   }
 
-  const current =
-    trackingSteps.indexOf(status);
+  const currentIndex = getStatusIndex(status);
 
   return (
     <div className="order-tracking">
 
-      {trackingSteps.map((step, index) => {
+      <div className="tracking-line" />
+
+      {statusSteps.map((step, index) => {
 
         const completed =
-          index <= current;
+          index <= currentIndex;
+
+        const current =
+          index === currentIndex;
 
         return (
           <div
@@ -52,26 +98,40 @@ function Tracking({ status }) {
                 ? "tracking-step completed"
                 : "tracking-step"
             }
-            key={step}
+            key={step.key}
           >
 
-            <div className="tracking-icon">
+            <div
+              className={
+                current
+                  ? "tracking-dot current"
+                  : completed
+                  ? "tracking-dot"
+                  : "tracking-dot upcoming"
+              }
+            >
               {completed ? (
-                <CheckCircle size={17} />
+                <Check size={13} />
               ) : (
                 <span>{index + 1}</span>
               )}
             </div>
 
-            <small>
-              {step === "pending"
-                ? "Order Placed"
-                : step === "processing"
-                ? "Processing"
-                : step === "shipped"
-                ? "Shipped"
-                : "Delivered"}
-            </small>
+            <div className="tracking-content">
+
+              <strong>
+                {step.label}
+              </strong>
+
+              <small>
+                {current
+                  ? step.description
+                  : index < currentIndex
+                  ? "Completed"
+                  : "Upcoming"}
+              </small>
+
+            </div>
 
           </div>
         );
@@ -80,6 +140,7 @@ function Tracking({ status }) {
     </div>
   );
 }
+
 
 export default function Account({
   user,
@@ -104,18 +165,21 @@ export default function Account({
   const [loading, setLoading] =
     useState(false);
 
-  const [canceling, setCanceling] =
+  const [cancelling, setCancelling] =
     useState(null);
+
+  /*
+    LOAD ORDERS
+  */
 
   useEffect(() => {
 
-    if (user) {
+    if (!user) return;
 
-      loadOrders();
-
-    }
+    loadOrders();
 
   }, [user]);
+
 
   async function loadOrders() {
 
@@ -126,13 +190,20 @@ export default function Account({
 
       setOrders(data);
 
-    } catch {
+    } catch (e) {
+
+      console.error(e);
 
       setOrders([]);
 
     }
 
   }
+
+
+  /*
+    LOGOUT
+  */
 
   function logout() {
 
@@ -148,7 +219,12 @@ export default function Account({
 
   }
 
-  async function cancelOrder(id) {
+
+  /*
+    CANCEL ORDER
+  */
+
+  async function cancelOrder(orderId) {
 
     const confirmed =
       window.confirm(
@@ -157,37 +233,52 @@ export default function Account({
 
     if (!confirmed) return;
 
-    setCanceling(id);
+    setCancelling(orderId);
     setErr("");
 
     try {
 
       await api(
-        `/orders/${id}/cancel`,
+        `/orders/${orderId}/cancel`,
         {
           method: "PATCH"
         }
       );
 
+      /*
+        Reload orders so the customer
+        immediately sees CANCELLED.
+      */
+
       await loadOrders();
 
     } catch (e) {
 
-      setErr(e.message);
+      setErr(
+        e.message ||
+        "Could not cancel order."
+      );
 
     } finally {
 
-      setCanceling(null);
+      setCancelling(null);
 
     }
 
   }
+
+
+  /*
+    LOGGED-IN ACCOUNT
+  */
 
   if (user) {
 
     return (
 
       <main className="account-premium">
+
+        {/* ACCOUNT HERO */}
 
         <section className="account-hero">
 
@@ -215,6 +306,8 @@ export default function Account({
 
         </section>
 
+
+        {/* ACCOUNT TOOLBAR */}
 
         <section className="account-toolbar">
 
@@ -264,12 +357,7 @@ export default function Account({
         </section>
 
 
-        {err && (
-          <p className="error">
-            {err}
-          </p>
-        )}
-
+        {/* ORDERS */}
 
         <section className="account-orders">
 
@@ -288,13 +376,25 @@ export default function Account({
             </div>
 
             <span>
+
               {orders.length}{" "}
+
               {orders.length === 1
                 ? "ORDER"
                 : "ORDERS"}
+
             </span>
 
           </div>
+
+
+          {err && (
+
+            <p className="error account-error">
+              {err}
+            </p>
+
+          )}
 
 
           {!orders.length ? (
@@ -341,6 +441,8 @@ export default function Account({
                   key={o.id}
                 >
 
+                  {/* ORDER HEADER */}
+
                   <div className="order-main">
 
                     <div className="order-icon">
@@ -375,6 +477,8 @@ export default function Account({
                   </div>
 
 
+                  {/* STATUS */}
+
                   <div className="order-status">
 
                     <span
@@ -385,6 +489,8 @@ export default function Account({
 
                   </div>
 
+
+                  {/* TOTAL */}
 
                   <div className="order-total">
 
@@ -401,39 +507,87 @@ export default function Account({
 
                   {/* TRACKING */}
 
-                  <Tracking
-                    status={o.status}
-                  />
+                  <div className="order-tracking-wrapper">
+
+                    <div className="tracking-title">
+
+                      <div>
+
+                        <p className="eyebrow">
+                          ORDER TRACKING
+                        </p>
+
+                        <strong>
+                          {o.status === "cancelled"
+                            ? "Order cancelled"
+                            : o.status === "delivered"
+                            ? "Your order has arrived"
+                            : o.status === "shipped"
+                            ? "Your order is on the way"
+                            : o.status === "processing"
+                            ? "We're preparing your order"
+                            : "Your order has been placed"}
+                        </strong>
+
+                      </div>
+
+                      {o.status === "shipped" && (
+                        <Truck size={20} />
+                      )}
+
+                      {o.status === "delivered" && (
+                        <Check size={20} />
+                      )}
+
+                      {o.status === "processing" && (
+                        <Package size={20} />
+                      )}
+
+                      {o.status === "pending" && (
+                        <Clock size={20} />
+                      )}
+
+                    </div>
 
 
-                  {/* CANCEL */}
+                    <OrderTracking
+                      status={o.status}
+                    />
+
+                  </div>
+
+
+                  {/* CANCEL BUTTON */}
 
                   {o.status === "pending" && (
 
                     <div className="order-cancel-area">
 
+                      <p>
+                        You can cancel this order
+                        while it is still pending.
+                      </p>
+
                       <button
+                        type="button"
                         className="cancel-order-button"
                         disabled={
-                          canceling === o.id
+                          cancelling === o.id
                         }
                         onClick={() =>
                           cancelOrder(o.id)
                         }
                       >
 
-                        <XCircle size={15} />
-
-                        {canceling === o.id
+                        {cancelling === o.id
                           ? "CANCELLING..."
                           : "CANCEL ORDER"}
 
-                      </button>
+                        {cancelling !== o.id && (
+                          <X size={15} />
+                        )}
 
-                      <small>
-                        Cancellation is available
-                        while your order is pending.
-                      </small>
+                      </button>
 
                     </div>
 
@@ -449,6 +603,8 @@ export default function Account({
 
         </section>
 
+
+        {/* FOOTER MESSAGE */}
 
         <section className="account-footer-message">
 
@@ -471,11 +627,12 @@ export default function Account({
       </main>
 
     );
-
   }
 
 
-  /* LOGIN / REGISTER */
+  /*
+    LOGIN / REGISTER
+  */
 
   async function submit(e) {
 
@@ -495,6 +652,7 @@ export default function Account({
           }
         );
 
+
       localStorage.setItem(
         "thrift_token",
         d.token
@@ -504,6 +662,7 @@ export default function Account({
         "thrift_user",
         JSON.stringify(d.user)
       );
+
 
       setUser(d.user);
 
@@ -526,9 +685,17 @@ export default function Account({
 
       <div className="auth-decoration">
 
-        <span>THE</span>
-        <em>FASHION</em>
-        <span>LAB</span>
+        <span>
+          THE
+        </span>
+
+        <em>
+          FASHION
+        </em>
+
+        <span>
+          LAB
+        </span>
 
       </div>
 
@@ -540,15 +707,19 @@ export default function Account({
         </p>
 
         <h1>
+
           {mode === "login"
             ? "Welcome back."
             : "Join the Fashion Lab."}
+
         </h1>
 
         <p className="auth-intro">
+
           {mode === "login"
             ? "Sign in to view your orders and continue your wardrobe story."
             : "Create an account to save your orders and discover your next favourite piece."}
+
         </p>
 
 
@@ -622,9 +793,11 @@ export default function Account({
 
 
           {err && (
+
             <p className="error">
               {err}
             </p>
+
           )}
 
 

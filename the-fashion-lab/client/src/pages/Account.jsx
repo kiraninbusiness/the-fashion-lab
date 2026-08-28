@@ -5,31 +5,150 @@ import {
   LogOut,
   Package,
   ShoppingBag,
-  UserRound
+  UserRound,
+  Truck,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 import { api } from "../api";
 
 const money = (n) =>
   `₹${Number(n).toLocaleString("en-IN")}`;
 
-export default function Account({ user, setUser }) {
+const trackingSteps = [
+  {
+    key: "pending",
+    label: "ORDER PLACED",
+    description: "We've received your order."
+  },
+  {
+    key: "processing",
+    label: "PROCESSING",
+    description: "Your order is being prepared."
+  },
+  {
+    key: "shipped",
+    label: "SHIPPED",
+    description: "Your order is on its way."
+  },
+  {
+    key: "delivered",
+    label: "DELIVERED",
+    description: "Your order has arrived."
+  }
+];
+
+function OrderTracking({ status }) {
+  if (status === "cancelled") {
+    return (
+      <div className="order-tracking cancelled-tracking">
+        <div className="tracking-cancelled-icon">
+          <XCircle size={22} />
+        </div>
+
+        <div>
+          <strong>ORDER CANCELLED</strong>
+          <p>This order has been cancelled.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentIndex = trackingSteps.findIndex(
+    (step) => step.key === status
+  );
+
+  return (
+    <div className="order-tracking">
+
+      {trackingSteps.map((step, index) => {
+
+        const completed =
+          index <= currentIndex;
+
+        const current =
+          index === currentIndex;
+
+        return (
+          <div
+            className={`tracking-step ${
+              completed ? "completed" : ""
+            } ${current ? "current" : ""}`}
+            key={step.key}
+          >
+
+            <div className="tracking-icon">
+              {completed ? (
+                <CheckCircle2 size={20} />
+              ) : (
+                <span>{index + 1}</span>
+              )}
+            </div>
+
+            <div className="tracking-content">
+
+              <strong>
+                {step.label}
+              </strong>
+
+              <p>
+                {step.description}
+              </p>
+
+            </div>
+
+            {index < trackingSteps.length - 1 && (
+              <div
+                className={`tracking-line ${
+                  index < currentIndex
+                    ? "filled"
+                    : ""
+                }`}
+              />
+            )}
+
+          </div>
+        );
+      })}
+
+    </div>
+  );
+}
+
+export default function Account({
+  user,
+  setUser
+}) {
   const [mode, setMode] = useState("login");
+
   const [f, setF] = useState({
     name: "",
     email: "",
     password: ""
   });
+
   const [err, setErr] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [expandedOrder, setExpandedOrder] =
+    useState(null);
+  const [cancelling, setCancelling] =
+    useState(null);
 
   useEffect(() => {
     if (user) {
-      api("/orders/mine")
-        .then(setOrders)
-        .catch(() => setOrders([]));
+      loadOrders();
     }
   }, [user]);
+
+  async function loadOrders() {
+    try {
+      const data = await api("/orders/mine");
+      setOrders(data);
+    } catch (e) {
+      setOrders([]);
+    }
+  }
 
   function logout() {
     localStorage.removeItem("thrift_token");
@@ -37,13 +156,51 @@ export default function Account({ user, setUser }) {
     setUser(null);
   }
 
+  async function cancelOrder(orderId) {
+
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this order?"
+    );
+
+    if (!confirmed) return;
+
+    setCancelling(orderId);
+    setErr("");
+
+    try {
+
+      await api(
+        `/orders/${orderId}/cancel`,
+        {
+          method: "PATCH"
+        }
+      );
+
+      await loadOrders();
+
+      setExpandedOrder(orderId);
+
+    } catch (e) {
+
+      setErr(e.message);
+
+    } finally {
+
+      setCancelling(null);
+
+    }
+  }
+
   if (user) {
     return (
       <main className="account-premium">
 
+        {/* ACCOUNT HERO */}
+
         <section className="account-hero">
 
           <div>
+
             <p className="eyebrow">
               THE FASHION LAB
             </p>
@@ -57,6 +214,7 @@ export default function Account({ user, setUser }) {
             <p className="account-email">
               {user.email}
             </p>
+
           </div>
 
           <div className="account-profile-icon">
@@ -65,19 +223,25 @@ export default function Account({ user, setUser }) {
 
         </section>
 
+
+        {/* ACCOUNT TOOLBAR */}
+
         <section className="account-toolbar">
 
           <div className="account-welcome">
+
             <Package size={18} />
 
             <span>
               <strong>
                 Your wardrobe story
               </strong>
+
               <small>
                 Manage your orders and account.
               </small>
             </span>
+
           </div>
 
           <div className="account-actions">
@@ -104,11 +268,15 @@ export default function Account({ user, setUser }) {
 
         </section>
 
+
+        {/* ORDERS */}
+
         <section className="account-orders">
 
           <div className="orders-heading">
 
             <div>
+
               <p className="eyebrow">
                 YOUR HISTORY
               </p>
@@ -116,6 +284,7 @@ export default function Account({ user, setUser }) {
               <h2>
                 Your orders
               </h2>
+
             </div>
 
             <span>
@@ -126,6 +295,14 @@ export default function Account({ user, setUser }) {
             </span>
 
           </div>
+
+
+          {err && (
+            <p className="error">
+              {err}
+            </p>
+          )}
+
 
           {!orders.length ? (
 
@@ -164,69 +341,167 @@ export default function Account({ user, setUser }) {
 
             <div className="orders-list">
 
-              {orders.map((o) => (
+              {orders.map((o) => {
 
-                <article
-                  className="premium-order-card"
-                  key={o.id}
-                >
+                const isExpanded =
+                  expandedOrder === o.id;
 
-                  <div className="order-main">
+                const canCancel =
+                  o.status === "pending";
 
-                    <div className="order-icon">
-                      <Package size={20} />
+                return (
+                  <article
+                    className={`premium-order-card ${
+                      isExpanded
+                        ? "order-expanded"
+                        : ""
+                    }`}
+                    key={o.id}
+                  >
+
+                    {/* ORDER HEADER */}
+
+                    <div className="order-main">
+
+                      <div className="order-icon">
+
+                        {o.status === "shipped" ? (
+                          <Truck size={20} />
+                        ) : (
+                          <Package size={20} />
+                        )}
+
+                      </div>
+
+                      <div className="order-info">
+
+                        <span className="order-label">
+                          ORDER
+                        </span>
+
+                        <strong>
+                          #{o.id}
+                        </strong>
+
+                        <small>
+                          {new Date(
+                            o.created_at
+                          ).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric"
+                            }
+                          )}
+                        </small>
+
+                      </div>
+
                     </div>
 
-                    <div className="order-info">
 
-                      <span className="order-label">
-                        ORDER
+                    {/* STATUS */}
+
+                    <div className="order-status">
+
+                      <span
+                        className={`status status-${o.status}`}
+                      >
+                        {o.status}
+                      </span>
+
+                    </div>
+
+
+                    {/* TOTAL */}
+
+                    <div className="order-total">
+
+                      <span>
+                        TOTAL
                       </span>
 
                       <strong>
-                        #{o.id}
+                        {money(o.total)}
                       </strong>
-
-                      <small>
-                        {new Date(
-                          o.created_at
-                        ).toLocaleDateString(
-                          "en-IN",
-                          {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric"
-                          }
-                        )}
-                      </small>
 
                     </div>
 
-                  </div>
 
-                  <div className="order-status">
+                    {/* ACTIONS */}
 
-                    <span
-                      className={`status status-${o.status}`}
-                    >
-                      {o.status}
-                    </span>
+                    <div className="order-actions">
 
-                  </div>
+                      <button
+                        type="button"
+                        className="track-order-button"
+                        onClick={() =>
+                          setExpandedOrder(
+                            isExpanded
+                              ? null
+                              : o.id
+                          )
+                        }
+                      >
+                        {isExpanded
+                          ? "HIDE TRACKING"
+                          : "TRACK ORDER"}
 
-                  <div className="order-total">
+                        <ArrowRight size={15} />
+                      </button>
 
-                    <span>TOTAL</span>
+                      {canCancel && (
+                        <button
+                          type="button"
+                          className="cancel-order-button"
+                          disabled={
+                            cancelling === o.id
+                          }
+                          onClick={() =>
+                            cancelOrder(o.id)
+                          }
+                        >
+                          {cancelling === o.id
+                            ? "CANCELLING..."
+                            : "CANCEL ORDER"}
+                        </button>
+                      )}
 
-                    <strong>
-                      {money(o.total)}
-                    </strong>
+                    </div>
 
-                  </div>
 
-                </article>
+                    {/* TRACKING */}
 
-              ))}
+                    {isExpanded && (
+                      <div className="order-tracking-panel">
+
+                        <div className="tracking-header">
+
+                          <div>
+                            <p className="eyebrow">
+                              ORDER #{o.id}
+                            </p>
+
+                            <h3>
+                              Track your order
+                            </h3>
+                          </div>
+
+                          <Package size={22} />
+
+                        </div>
+
+                        <OrderTracking
+                          status={o.status}
+                        />
+
+                      </div>
+                    )}
+
+                  </article>
+                );
+              })}
 
             </div>
 
@@ -234,9 +509,14 @@ export default function Account({ user, setUser }) {
 
         </section>
 
+
+        {/* FOOTER MESSAGE */}
+
         <section className="account-footer-message">
 
-          <span>THE FASHION LAB</span>
+          <span>
+            THE FASHION LAB
+          </span>
 
           <p>
             Every purchase gives a beautiful
@@ -254,12 +534,18 @@ export default function Account({ user, setUser }) {
     );
   }
 
+
+  /* LOGIN / REGISTER */
+
   async function submit(e) {
+
     e.preventDefault();
+
     setErr("");
     setLoading(true);
 
     try {
+
       const d = await api(
         "/auth/" + mode,
         {
@@ -281,20 +567,28 @@ export default function Account({ user, setUser }) {
       setUser(d.user);
 
     } catch (e) {
+
       setErr(e.message);
+
     } finally {
+
       setLoading(false);
+
     }
   }
+
 
   return (
     <main className="account-auth">
 
       <div className="auth-decoration">
+
         <span>THE</span>
         <em>FASHION</em>
         <span>LAB</span>
+
       </div>
+
 
       <section className="auth-card">
 
@@ -314,6 +608,7 @@ export default function Account({ user, setUser }) {
             : "Create an account to save your orders and discover your next favourite piece."}
         </p>
 
+
         <form
           className="premium-account-form"
           onSubmit={submit}
@@ -321,6 +616,7 @@ export default function Account({ user, setUser }) {
 
           {mode === "register" && (
             <label>
+
               FULL NAME
 
               <input
@@ -334,10 +630,13 @@ export default function Account({ user, setUser }) {
                   })
                 }
               />
+
             </label>
           )}
 
+
           <label>
+
             EMAIL
 
             <input
@@ -352,9 +651,12 @@ export default function Account({ user, setUser }) {
                 })
               }
             />
+
           </label>
 
+
           <label>
+
             PASSWORD
 
             <input
@@ -370,7 +672,9 @@ export default function Account({ user, setUser }) {
                 })
               }
             />
+
           </label>
+
 
           {err && (
             <p className="error">
@@ -378,10 +682,12 @@ export default function Account({ user, setUser }) {
             </p>
           )}
 
+
           <button
             disabled={loading}
             className="auth-submit"
           >
+
             {loading
               ? "PLEASE WAIT..."
               : mode === "login"
@@ -391,24 +697,31 @@ export default function Account({ user, setUser }) {
             {!loading && (
               <ArrowRight size={16} />
             )}
+
           </button>
 
         </form>
 
+
         <button
           className="auth-switch"
           onClick={() => {
+
             setErr("");
+
             setMode(
               mode === "login"
                 ? "register"
                 : "login"
             );
+
           }}
         >
+
           {mode === "login"
             ? "Don't have an account? Create one"
             : "Already registered? Login"}
+
         </button>
 
       </section>

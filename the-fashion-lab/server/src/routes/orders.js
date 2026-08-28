@@ -6,6 +6,10 @@ import { auth, admin } from '../middleware/auth.js';
 
 const router = Router();
 
+
+/*
+  CREATE ORDER
+*/
 router.post('/create', auth, async (req, res) => {
   const {
     items = [],
@@ -32,11 +36,6 @@ router.post('/create', auth, async (req, res) => {
 
     const ids = items.map((x) => Number(x.productId));
 
-    /*
-      LOCK PRODUCTS WHILE CHECKING STOCK
-      This prevents two customers from buying
-      the same limited stock at the same time.
-    */
     const { rows } = await client.query(
       `SELECT *
        FROM products
@@ -78,13 +77,9 @@ router.post('/create', auth, async (req, res) => {
         );
       }
 
-      total +=
-        Number(p.price) * quantity;
+      total += Number(p.price) * quantity;
     }
 
-    /*
-      CREATE ORDER
-    */
     const order = (
       await client.query(
         `INSERT INTO orders(
@@ -108,10 +103,6 @@ router.post('/create', auth, async (req, res) => {
       )
     ).rows[0];
 
-    /*
-      CREATE ORDER ITEMS
-      AND REDUCE STOCK
-    */
     for (const item of items) {
       const productId = Number(item.productId);
       const quantity = Number(item.quantity);
@@ -152,18 +143,15 @@ router.post('/create', auth, async (req, res) => {
       process.env.RAZORPAY_KEY_SECRET
     ) {
       const rzp = new Razorpay({
-        key_id:
-          process.env.RAZORPAY_KEY_ID,
-        key_secret:
-          process.env.RAZORPAY_KEY_SECRET
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
       });
 
-      const rOrder =
-        await rzp.orders.create({
-          amount: total * 100,
-          currency: 'INR',
-          receipt: `order_${order.id}`
-        });
+      const rOrder = await rzp.orders.create({
+        amount: total * 100,
+        currency: 'INR',
+        receipt: `order_${order.id}`
+      });
 
       await client.query(
         `UPDATE orders
@@ -172,8 +160,7 @@ router.post('/create', auth, async (req, res) => {
         [rOrder.id, order.id]
       );
 
-      order.razorpay_order_id =
-        rOrder.id;
+      order.razorpay_order_id = rOrder.id;
     }
 
     await client.query('COMMIT');
@@ -183,7 +170,6 @@ router.post('/create', auth, async (req, res) => {
     });
 
   } catch (e) {
-
     await client.query('ROLLBACK');
 
     console.error(
@@ -204,7 +190,7 @@ router.post('/create', auth, async (req, res) => {
 
 
 /*
-  MY ORDERS
+  CUSTOMER — MY ORDERS
 */
 router.get('/mine', auth, async (req, res) => {
   const { rows } = await pool.query(
@@ -220,31 +206,6 @@ router.get('/mine', auth, async (req, res) => {
 
 
 /*
-  ADMIN — ALL ORDERS
-*/
-router.get('/', auth, admin, async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT
-       o.*,
-       u.name,
-       u.email
-     FROM orders o
-     JOIN users u
-       ON u.id = o.user_id
-     ORDER BY o.created_at DESC`
-  );
-
-  res.json(rows);
-});
-
-
-/*
-  ADMIN — UPDATE ORDER STATUS
-*/
-/*
-  CUSTOMER — CANCEL OWN ORDER
-*/
-/*
   CUSTOMER — CANCEL OWN ORDER
   AND RESTORE PRODUCT STOCK
 */
@@ -257,7 +218,6 @@ router.patch(
     try {
       await client.query('BEGIN');
 
-      // Find the customer's pending order
       const orderResult = await client.query(
         `SELECT *
          FROM orders
@@ -282,7 +242,6 @@ router.patch(
 
       const order = orderResult.rows[0];
 
-      // Get all products from this order
       const itemsResult = await client.query(
         `SELECT product_id, quantity
          FROM order_items
@@ -290,7 +249,9 @@ router.patch(
         [order.id]
       );
 
-      // Restore stock
+      /*
+        RESTORE STOCK
+      */
       for (const item of itemsResult.rows) {
         await client.query(
           `UPDATE products
@@ -303,7 +264,9 @@ router.patch(
         );
       }
 
-      // Cancel the order
+      /*
+        CANCEL ORDER
+      */
       const updatedResult = await client.query(
         `UPDATE orders
          SET status = 'cancelled'
@@ -315,11 +278,11 @@ router.patch(
       await client.query('COMMIT');
 
       res.json({
+        message: 'Order cancelled successfully',
         order: updatedResult.rows[0]
       });
 
     } catch (e) {
-
       await client.query('ROLLBACK');
 
       console.error(
@@ -338,30 +301,30 @@ router.patch(
   }
 );
 
-      if (!rows.length) {
-        return res.status(400).json({
-          message:
-            'This order cannot be cancelled.'
-        });
-      }
 
-      res.json({
-        order: rows[0]
-      });
+/*
+  ADMIN — ALL ORDERS
+*/
+router.get('/', auth, admin, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT
+       o.*,
+       u.name,
+       u.email
+     FROM orders o
+     JOIN users u
+       ON u.id = o.user_id
+     ORDER BY o.created_at DESC`
+  );
 
-    } catch (e) {
-      console.error(
-        'CANCEL ORDER ERROR:',
-        e.message
-      );
+  res.json(rows);
+});
 
-      res.status(500).json({
-        message:
-          'Could not cancel order'
-      });
-    }
-  }
-);router.patch(
+
+/*
+  ADMIN — UPDATE ORDER STATUS
+*/
+router.patch(
   '/:id/status',
   auth,
   admin,
@@ -375,10 +338,8 @@ router.patch(
       await pool.query(
         `UPDATE orders
          SET
-           status =
-             COALESCE($1, status),
-           payment_status =
-             COALESCE($2, payment_status)
+           status = COALESCE($1, status),
+           payment_status = COALESCE($2, payment_status)
          WHERE id = $3
          RETURNING *`,
         [

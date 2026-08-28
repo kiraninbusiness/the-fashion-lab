@@ -50,6 +50,11 @@ export async function initDb(){
     );
   `);
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod'");
+  await pool.query(`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS reset_token TEXT,
+  ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMPTZ
+`);
   if(process.env.ADMIN_EMAIL){ await pool.query("UPDATE users SET role='admin' WHERE email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]); }
   const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
   if(rows[0].count===0){

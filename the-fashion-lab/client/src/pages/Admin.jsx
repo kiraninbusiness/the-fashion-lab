@@ -656,163 +656,218 @@ const filteredProducts = products.filter((p) => {
         </div>
 
 
-        {/* PRODUCT LIST */}
+      {/* PRODUCT LIST */}
 
-        <div className="admin-products-panel">
+<div className="admin-products-panel">
 
-          <div className="admin-panel-header">
+  <div className="admin-panel-header">
 
-            <div>
-              <p className="eyebrow">
-                YOUR COLLECTION
-              </p>
+    <div>
+      <p className="eyebrow">
+        YOUR COLLECTION
+      </p>
 
-              <h2>
-                Products
-                <span>
-                  {products.length}
-                </span>
-              </h2>
+      <h2>
+        Products
+        <span>
+          {products.length}
+        </span>
+      </h2>
+    </div>
+
+  </div>
+
+
+  {/* PRODUCT FILTERS */}
+
+  <div className="admin-product-controls">
+
+    <input
+      type="search"
+      placeholder="Search products..."
+      value={productSearch}
+      onChange={(e) =>
+        setProductSearch(e.target.value)
+      }
+    />
+
+    <select
+      value={productCategory}
+      onChange={(e) =>
+        setProductCategory(e.target.value)
+      }
+    >
+      <option value="All">
+        All Categories
+      </option>
+
+      <option value="Vintage">
+        Vintage
+      </option>
+
+      <option value="Streetwear">
+        Streetwear
+      </option>
+
+      <option value="Casual">
+        Casual
+      </option>
+    </select>
+
+
+    <select
+      value={stockFilter}
+      onChange={(e) =>
+        setStockFilter(e.target.value)
+      }
+    >
+      <option value="All">
+        All Stock
+      </option>
+
+      <option value="In Stock">
+        In Stock
+      </option>
+
+      <option value="Low Stock">
+        Low Stock
+      </option>
+
+      <option value="Sold Out">
+        Sold Out
+      </option>
+    </select>
+
+  </div>
+
+
+  {/* RESULT COUNT */}
+
+  <div className="admin-product-results">
+    Showing {filteredProducts.length} of{" "}
+    {products.length} products
+  </div>
+
+
+  {/* PRODUCT LIST */}
+
+  <div className="admin-product-list">
+
+    {filteredProducts.length === 0 ? (
+
+      <div className="admin-empty">
+
+        <ShoppingBag size={28} />
+
+        <h3>
+          No products found
+        </h3>
+
+        <p>
+          Try changing your search or filters.
+        </p>
+
+      </div>
+
+    ) : (
+
+      filteredProducts.map((p) => (
+
+        <article
+          className="admin-product-card"
+          key={p.id}
+        >
+
+          {/* PRODUCT IMAGE */}
+
+          <img
+            src={p.image}
+            alt={p.name}
+          />
+
+
+          {/* PRODUCT DETAILS */}
+
+          <div className="admin-product-details">
+
+            <div className="admin-product-title">
+
+              <h3>
+                {p.name}
+              </h3>
+
+              <span>
+                {p.category} · {p.size}
+              </span>
+
+            </div>
+
+
+            {/* PRICE */}
+
+            <strong className="admin-product-price">
+              {money(p.price)}
+            </strong>
+
+
+            {/* STOCK */}
+
+            <small
+              className={
+                Number(p.stock) === 0
+                  ? "stock sold"
+                  : Number(p.stock) <= 2
+                  ? "stock low"
+                  : "stock good"
+              }
+            >
+
+              {Number(p.stock) === 0
+                ? "SOLD OUT"
+                : Number(p.stock) <= 2
+                ? `ONLY ${p.stock} LEFT`
+                : `${p.stock} IN STOCK`}
+
+            </small>
+
+
+            {/* ACTIONS */}
+
+            <div className="admin-product-actions">
+
+              <button
+                type="button"
+                onClick={() => edit(p)}
+              >
+                <Pencil size={15} />
+                Edit
+              </button>
+
+
+              <button
+                type="button"
+                className="delete"
+                onClick={() =>
+                  remove(p.id)
+                }
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
+
             </div>
 
           </div>
 
+        </article>
 
-         <div className="admin-product-controls">
+      ))
 
-  <input
-    type="search"
-    placeholder="Search products..."
-    value={productSearch}
-    onChange={(e) =>
-      setProductSearch(e.target.value)
-    }
-  />
+    )}
 
-  <select
-    value={productCategory}
-    onChange={(e) =>
-      setProductCategory(e.target.value)
-    }
-  >
-    <option value="All">All Categories</option>
-    <option value="Vintage">Vintage</option>
-    <option value="Streetwear">Streetwear</option>
-    <option value="Casual">Casual</option>
-  </select>
-
-  <select
-    value={stockFilter}
-    onChange={(e) =>
-      setStockFilter(e.target.value)
-    }
-  >
-    <option value="All">All Stock</option>
-    <option value="In Stock">In Stock</option>
-    <option value="Low Stock">Low Stock</option>
-    <option value="Sold Out">Sold Out</option>
-  </select>
-
-</div>
-
-<div className="admin-product-results">
-  Showing {filteredProducts.length} of {products.length} products
-</div>
-
-<div className="admin-product-list">
-{filteredProducts.length === 0 ? (
-  <div className="admin-empty">
-    <ShoppingBag size={28} />
-    <h3>No products found</h3>
-    <p>
-      Try changing your search or filters.
-    </p>
   </div>
-) : (
-  filteredProducts.map((p) => (
-  
-
-              <article
-                className="admin-product-card"
-                key={p.id}
-              >
-{/* existing product card */}
-      </article>
-    ))
-  )}
 
 </div>
-                <img
-                  src={p.image}
-                  alt={p.name}
-                />
-
-                <div className="admin-product-details">
-
-                  <div className="admin-product-title">
-
-                    <h3>{p.name}</h3>
-
-                    <span>
-                      {p.category} · {p.size}
-                    </span>
-
-                  </div>
-
-
-                  <strong className="admin-product-price">
-                    {money(p.price)}
-                  </strong>
-
-
-                  <small
-                    className={
-                      Number(p.stock) === 0
-                        ? "stock sold"
-                        : Number(p.stock) <= 2
-                        ? "stock low"
-                        : "stock good"
-                    }
-                  >
-                    {Number(p.stock) === 0
-                      ? "SOLD OUT"
-                      : Number(p.stock) <= 2
-                      ? `ONLY ${p.stock} LEFT`
-                      : `${p.stock} IN STOCK`}
-                  </small>
-
-
-                  <div className="admin-product-actions">
-
-                    <button
-                      onClick={() => edit(p)}
-                    >
-                      <Pencil size={15} />
-                      Edit
-                    </button>
-
-                    <button
-                      className="delete"
-                      onClick={() =>
-                        remove(p.id)
-                      }
-                    >
-                      <Trash2 size={15} />
-                      Delete
-                    </button>
-
-                  </div>
-
-                </div>
-
-              </article>
-
-            ))}
-
-          </div>
-
-        </div>
-
       </section>
 
 

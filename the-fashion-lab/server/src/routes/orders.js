@@ -244,23 +244,99 @@ router.get('/', auth, admin, async (req, res) => {
 /*
   CUSTOMER — CANCEL OWN ORDER
 */
+/*
+  CUSTOMER — CANCEL OWN ORDER
+  AND RESTORE PRODUCT STOCK
+*/
 router.patch(
   '/:id/cancel',
   auth,
   async (req, res) => {
+    const client = await pool.connect();
+
     try {
-      const { rows } = await pool.query(
-        `UPDATE orders
-         SET status = 'cancelled'
+      await client.query('BEGIN');
+
+      // Find the customer's pending order
+      const orderResult = await client.query(
+        `SELECT *
+         FROM orders
          WHERE id = $1
            AND user_id = $2
            AND status = 'pending'
-         RETURNING *`,
+         FOR UPDATE`,
         [
           req.params.id,
           req.user.id
         ]
       );
+
+      if (!orderResult.rows.length) {
+        await client.query('ROLLBACK');
+
+        return res.status(400).json({
+          message:
+            'This order cannot be cancelled.'
+        });
+      }
+
+      const order = orderResult.rows[0];
+
+      // Get all products from this order
+      const itemsResult = await client.query(
+        `SELECT product_id, quantity
+         FROM order_items
+         WHERE order_id = $1`,
+        [order.id]
+      );
+
+      // Restore stock
+      for (const item of itemsResult.rows) {
+        await client.query(
+          `UPDATE products
+           SET stock = stock + $1
+           WHERE id = $2`,
+          [
+            Number(item.quantity),
+            Number(item.product_id)
+          ]
+        );
+      }
+
+      // Cancel the order
+      const updatedResult = await client.query(
+        `UPDATE orders
+         SET status = 'cancelled'
+         WHERE id = $1
+         RETURNING *`,
+        [order.id]
+      );
+
+      await client.query('COMMIT');
+
+      res.json({
+        order: updatedResult.rows[0]
+      });
+
+    } catch (e) {
+
+      await client.query('ROLLBACK');
+
+      console.error(
+        'CANCEL ORDER ERROR:',
+        e.message
+      );
+
+      res.status(500).json({
+        message:
+          'Could not cancel order'
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
 
       if (!rows.length) {
         return res.status(400).json({

@@ -32,6 +32,7 @@ const empty = {
   price: "",
   old_price: "",
   image: "",
+  extraImages: "",
   stock: 1
 };
 
@@ -332,12 +333,20 @@ export default function Admin({ user }) {
     }
 
     try {
+      const images = f.extraImages
+        .split("\n")
+        .map((url) => url.trim())
+        .filter(Boolean);
+
+      const { extraImages, ...rest } = f;
+
       const body = {
-        ...f,
+        ...rest,
         name: f.name.trim(),
         description:
           f.description.trim(),
         image: f.image.trim(),
+        images,
         price,
         old_price: oldPrice,
         stock
@@ -457,6 +466,9 @@ export default function Admin({ user }) {
         product.old_price ?? "",
       image:
         product.image || "",
+      extraImages: Array.isArray(product.images)
+        ? product.images.join("\n")
+        : "",
       stock:
         product.stock ?? 0
     });
@@ -1037,6 +1049,23 @@ export default function Admin({ user }) {
                   />
                 </div>
               )}
+            </label>
+
+
+            <label>
+              ADDITIONAL PHOTOS (OPTIONAL)
+
+              <textarea
+                placeholder={"One image URL per line\ne.g. back view, close-up of fabric"}
+                rows={3}
+                value={f.extraImages}
+                onChange={(e) =>
+                  change(
+                    "extraImages",
+                    e.target.value
+                  )
+                }
+              />
             </label>
 
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,8 +12,10 @@ import {
   Check,
   X,
   Ruler,
-  Info
+  Info,
+  Star
 } from "lucide-react";
+import { api } from "../api";
 
 /* =========================================================
    SIZE GUIDE DATA
@@ -50,8 +52,199 @@ const CONDITION_GUIDE = [
 ];
 
 /* =========================================================
-   SIZE & CONDITION GUIDE MODAL
+   STAR RATING (display)
 ========================================================= */
+
+function StarRating({ value = 0, size = 15 }) {
+  return (
+    <span className="star-rating" aria-label={`${value} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={size}
+          strokeWidth={1.5}
+          fill={n <= Math.round(value) ? "currentColor" : "none"}
+        />
+      ))}
+    </span>
+  );
+}
+
+/* =========================================================
+   REVIEWS SECTION
+========================================================= */
+
+function ReviewsSection({ productId, user }) {
+  const [data, setData] = useState({
+    reviews: [],
+    summary: { count: 0, average: 0 }
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading(true);
+
+    api(`/reviews/${productId}`)
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    try {
+      await api(`/reviews/${productId}`, {
+        method: "POST",
+        body: JSON.stringify({ rating, comment })
+      });
+
+      const refreshed = await api(`/reviews/${productId}`);
+      setData(refreshed);
+      setFormOpen(false);
+      setComment("");
+    } catch (err) {
+      setError(err.message || "Couldn't submit your review.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="reviews-section">
+
+      <div className="reviews-header">
+
+        <div>
+          <p className="eyebrow">CUSTOMER REVIEWS</p>
+
+          <h2>
+            {data.summary.count > 0 ? (
+              <>
+                <StarRating value={data.summary.average} size={20} />
+                <span className="reviews-average">
+                  {data.summary.average} out of 5
+                </span>
+                <span className="reviews-count">
+                  ({data.summary.count}{" "}
+                  {data.summary.count === 1 ? "review" : "reviews"})
+                </span>
+              </>
+            ) : (
+              "No reviews yet."
+            )}
+          </h2>
+        </div>
+
+        {user && (
+          <button
+            type="button"
+            className="outline"
+            onClick={() => setFormOpen((v) => !v)}
+          >
+            {formOpen ? "CANCEL" : "WRITE A REVIEW"}
+          </button>
+        )}
+
+      </div>
+
+      {!user && (
+        <p className="reviews-login-note">
+          <Link to="/account">Log in</Link> to leave a review.
+        </p>
+      )}
+
+      {formOpen && (
+        <form className="review-form" onSubmit={submitReview}>
+
+          <label>
+            YOUR RATING
+
+            <div className="review-star-picker">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  type="button"
+                  key={n}
+                  onClick={() => setRating(n)}
+                  aria-label={`${n} stars`}
+                >
+                  <Star
+                    size={22}
+                    strokeWidth={1.5}
+                    fill={n <= rating ? "currentColor" : "none"}
+                  />
+                </button>
+              ))}
+            </div>
+          </label>
+
+          <label>
+            YOUR REVIEW
+
+            <textarea
+              rows={3}
+              placeholder="How was the fit, quality, and condition?"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+          </label>
+
+          {error && <p className="error">{error}</p>}
+
+          <button
+            type="submit"
+            className="button dark full"
+            disabled={submitting}
+          >
+            {submitting ? "SUBMITTING..." : "SUBMIT REVIEW"}
+          </button>
+
+        </form>
+      )}
+
+      {!loading && data.reviews.length > 0 && (
+        <div className="reviews-list">
+          {data.reviews.map((r) => (
+            <div className="review-item" key={r.id}>
+              <div className="review-item-head">
+                <StarRating value={r.rating} />
+                <strong>{r.user_name}</strong>
+                <span>
+                  {new Date(r.created_at).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                  })}
+                </span>
+              </div>
+
+              {r.comment && <p>{r.comment}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+    </section>
+  );
+}
 
 function GuideModal({ view, onClose }) {
   return (
@@ -133,7 +326,8 @@ export default function ProductDetails({
   products = [],
   add,
   wishlist = [],
-  toggle
+  toggle,
+  user
 }) {
   const { id } = useParams();
 
@@ -144,6 +338,11 @@ export default function ProductDetails({
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [guideView, setGuideView] = useState(null); // "size" | "condition" | null
+  const [activeImage, setActiveImage] = useState(0);
+
+  useEffect(() => {
+    setActiveImage(0);
+  }, [id]);
 
   if (!product) {
     return (
@@ -165,9 +364,17 @@ export default function ProductDetails({
     );
   }
 
+
   const stock = Number(product.stock) || 0;
   const price = Number(product.price) || 0;
   const oldPrice = Number(product.old_price) || 0;
+
+  const photos = [
+    product.image,
+    ...(Array.isArray(product.images) ? product.images : [])
+  ].filter(Boolean);
+
+  const currentPhoto = photos[activeImage] || photos[0];
 
   const isWishlisted = wishlist.includes(product.id);
 
@@ -240,7 +447,7 @@ export default function ProductDetails({
           <div className="premium-main-image">
 
             <img
-              src={product.image}
+              src={currentPhoto}
               alt={product.name}
             />
 
@@ -297,6 +504,27 @@ export default function ProductDetails({
             </span>
 
           </div>
+
+
+          {/* THUMBNAILS */}
+
+          {photos.length > 1 && (
+            <div className="premium-thumbnails">
+              {photos.map((src, i) => (
+                <button
+                  type="button"
+                  key={i}
+                  className={`premium-thumbnail ${
+                    i === activeImage ? "active" : ""
+                  }`}
+                  onClick={() => setActiveImage(i)}
+                  aria-label={`View photo ${i + 1}`}
+                >
+                  <img src={src} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
 
         </div>
 
@@ -624,6 +852,13 @@ export default function ProductDetails({
         </div>
 
       </section>
+
+
+      {/* =========================================
+          REVIEWS
+      ========================================= */}
+
+      <ReviewsSection productId={product.id} user={user} />
 
 
       {/* =========================================

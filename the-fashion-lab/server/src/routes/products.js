@@ -11,14 +11,14 @@ router.get('/',async(req,res)=>{
   const {rows}=await pool.query(q,values);res.json(rows);
 });
 router.post('/',auth,admin,async(req,res)=>{
-  const {name,description='',category,gender='Unisex',size,condition='Excellent',price,old_price=null,image,stock=1}=req.body;
-  const {rows}=await pool.query(`INSERT INTO products(name,description,category,gender,size,condition,price,old_price,image,stock)
-  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-  [name,description,category,gender,size,condition,price,old_price,image,stock]);
+  const {name,description='',category,gender='Unisex',size,condition='Excellent',price,old_price=null,image,images=[],stock=1}=req.body;
+  const {rows}=await pool.query(`INSERT INTO products(name,description,category,gender,size,condition,price,old_price,image,images,stock)
+  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+  [name,description,category,gender,size,condition,price,old_price,image,images,stock]);
   res.status(201).json(rows[0]);
 });
 router.patch('/:id',auth,admin,async(req,res)=>{
-  const allowed=['name','description','category','gender','size','condition','price','old_price','image','stock'];
+  const allowed=['name','description','category','gender','size','condition','price','old_price','image','images','stock'];
   const entries=Object.entries(req.body).filter(([k])=>allowed.includes(k));
   if(!entries.length)return res.status(400).json({message:'Nothing to update'});
   const vals=entries.map(([,v])=>v); vals.push(req.params.id);

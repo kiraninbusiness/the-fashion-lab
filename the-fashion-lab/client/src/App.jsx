@@ -2637,6 +2637,7 @@ export default function App() {
               wishlist={wish}
               toggle={toggle}
               setCart={setCart}
+              user={user}
             />
           }
         />

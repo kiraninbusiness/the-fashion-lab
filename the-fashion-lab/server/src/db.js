@@ -50,6 +50,15 @@ created_at TIMESTAMPTZ DEFAULT NOW()
       price INTEGER NOT NULL,
       quantity INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS reviews(
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(product_id, user_id)
+    );
   `);
   await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod'");
   await pool.query(

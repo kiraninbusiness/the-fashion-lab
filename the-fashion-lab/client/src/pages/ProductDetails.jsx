@@ -9,8 +9,122 @@ import {
   RotateCcw,
   Minus,
   Plus,
-  Check
+  Check,
+  X,
+  Ruler,
+  Info
 } from "lucide-react";
+
+/* =========================================================
+   SIZE GUIDE DATA
+   General reference chart. Individual pre-loved pieces can
+   vary slightly, so we're upfront about that in the modal.
+========================================================= */
+
+const SIZE_CHART = [
+  { size: "S", chest: "36\"", length: "27\"", shoulder: "17\"" },
+  { size: "M", chest: "39\"", length: "28\"", shoulder: "18\"" },
+  { size: "L", chest: "42\"", length: "29\"", shoulder: "19\"" },
+  { size: "XL", chest: "45\"", length: "30\"", shoulder: "20\"" }
+];
+
+/* =========================================================
+   CONDITION GUIDE DATA
+   Explains what each condition label on a listing actually
+   means, so buyers know what they're getting before they buy.
+========================================================= */
+
+const CONDITION_GUIDE = [
+  {
+    label: "Excellent",
+    detail: "Little to no visible wear. Looks close to new."
+  },
+  {
+    label: "Good",
+    detail: "Gently worn with light, expected signs of use. No flaws that affect wearability."
+  },
+  {
+    label: "Fair",
+    detail: "Noticeable wear or minor flaws (small marks, light fading). Priced accordingly and noted in the description."
+  }
+];
+
+/* =========================================================
+   SIZE & CONDITION GUIDE MODAL
+========================================================= */
+
+function GuideModal({ view, onClose }) {
+  return (
+    <div className="guide-overlay" onClick={onClose}>
+      <div
+        className="guide-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="guide-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
+
+        {view === "size" ? (
+          <>
+            <p className="eyebrow">FIT REFERENCE</p>
+            <h2>Size &amp; Fit Guide</h2>
+            <p className="guide-note">
+              A general body-measurement reference in inches.
+              Since every piece is pre-loved, actual garment
+              measurements can vary slightly from these ranges —
+              check the item description or message us if you
+              want exact measurements before buying.
+            </p>
+
+            <table className="guide-table">
+              <thead>
+                <tr>
+                  <th>Size</th>
+                  <th>Chest</th>
+                  <th>Length</th>
+                  <th>Shoulder</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SIZE_CHART.map((row) => (
+                  <tr key={row.size}>
+                    <td>{row.size}</td>
+                    <td>{row.chest}</td>
+                    <td>{row.length}</td>
+                    <td>{row.shoulder}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <>
+            <p className="eyebrow">TRANSPARENCY FIRST</p>
+            <h2>Condition Guide</h2>
+            <p className="guide-note">
+              Every piece is inspected before listing. Here's
+              exactly what each condition label means.
+            </p>
+
+            <div className="guide-condition-list">
+              {CONDITION_GUIDE.map((c) => (
+                <div className="guide-condition-row" key={c.label}>
+                  <strong>{c.label}</strong>
+                  <p>{c.detail}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const money = (n) =>
   `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -29,6 +143,7 @@ export default function ProductDetails({
 
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [guideView, setGuideView] = useState(null); // "size" | "condition" | null
 
   if (!product) {
     return (
@@ -278,6 +393,33 @@ export default function ProductDetails({
 
 
           {/* =================================
+              GUIDE LINKS
+          ================================= */}
+
+          <div className="guide-links">
+
+            <button
+              type="button"
+              className="guide-link"
+              onClick={() => setGuideView("size")}
+            >
+              <Ruler size={14} />
+              SIZE &amp; FIT GUIDE
+            </button>
+
+            <button
+              type="button"
+              className="guide-link"
+              onClick={() => setGuideView("condition")}
+            >
+              <Info size={14} />
+              WHAT DOES "{(product.condition || "PRE-LOVED").toUpperCase()}" MEAN?
+            </button>
+
+          </div>
+
+
+          {/* =================================
               DESCRIPTION
           ================================= */}
 
@@ -482,6 +624,18 @@ export default function ProductDetails({
         </div>
 
       </section>
+
+
+      {/* =========================================
+          SIZE / CONDITION GUIDE MODAL
+      ========================================= */}
+
+      {guideView && (
+        <GuideModal
+          view={guideView}
+          onClose={() => setGuideView(null)}
+        />
+      )}
 
     </main>
   );

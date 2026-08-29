@@ -1,2 +1,0 @@
-import React from "react";import {Link,useLocation} from "react-router-dom";import {CheckCircle} from "lucide-react";
-export default function Success(){const {state}=useLocation();return <main className="page success"><CheckCircle size={55}/><p className="eyebrow">ORDER CONFIRMED</p><h1>Thank you for shopping pre-loved.</h1><p>Your order {state?.order?.id?`#${state.order.id}`:""} has been created.</p><Link className="button dark" to="/shop">CONTINUE SHOPPING</Link></main>}

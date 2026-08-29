@@ -430,6 +430,41 @@ export default function Checkout({
 
 
       /*
+        Show UPI first — most Indian shoppers on
+        mobile expect this, and it's what Snitch/
+        Wrogn-style checkouts default to. Falls back
+        to cards/netbanking/wallets underneath.
+      */
+      config: {
+        display: {
+          blocks: {
+            upi_block: {
+              name: "Pay via UPI",
+              instruments: [
+                { method: "upi" }
+              ]
+            },
+            other_block: {
+              name: "Other payment methods",
+              instruments: [
+                { method: "card" },
+                { method: "netbanking" },
+                { method: "wallet" }
+              ]
+            }
+          },
+          sequence: [
+            "block.upi_block",
+            "block.other_block"
+          ],
+          preferences: {
+            show_default_blocks: false
+          }
+        }
+      },
+
+
+      /*
         SUCCESS
       */
       handler:
@@ -990,11 +1025,12 @@ export default function Checkout({
                 <div>
 
                   <strong>
-                    Online Payment
+                    UPI / Cards / Netbanking
                   </strong>
 
                   <small>
-                    Pay securely with Razorpay.
+                    Pay securely via UPI apps, cards
+                    or netbanking — powered by Razorpay.
                   </small>
 
                 </div>
